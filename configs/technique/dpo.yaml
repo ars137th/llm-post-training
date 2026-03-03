@@ -1,0 +1,40 @@
+# Direct Preference Optimization Configuration
+
+technique:
+  name: "dpo"
+  type: "preference"
+
+  # DPO-specific parameters
+  beta: 0.1  # KL divergence coefficient (higher = stay closer to reference)
+  loss_type: "sigmoid"  # "sigmoid" or "hinge"
+
+  # Reference model
+  reference_model:
+    use_same_as_policy: false  # If true, creates copy; if false, loads separately
+    freeze: true  # Reference model should always be frozen
+
+  # Training hyperparameters
+  learning_rate: 5e-6  # Typically lower than SFT
+  num_epochs: 1
+  batch_size: 2  # Smaller due to paired examples
+  gradient_accumulation_steps: 8
+
+  # Optimization
+  optimizer: "adamw"
+  weight_decay: 0.01
+  lr_scheduler: "linear"
+  warmup_ratio: 0.1
+
+  # Regularization
+  max_grad_norm: 1.0
+
+  # Data processing
+  max_length: 512
+  max_prompt_length: 256
+
+# Logging specific to DPO
+logging:
+  log_predictions: true
+  num_predictions_to_log: 3
+  log_preference_accuracy: true
+  log_reward_margin: true

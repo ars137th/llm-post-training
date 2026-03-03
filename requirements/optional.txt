@@ -1,0 +1,16 @@
+# Optional dependencies for advanced features
+-r base.txt
+
+# Quantization (requires CUDA)
+bitsandbytes>=0.41.0
+
+# Distributed training (large models)
+deepspeed>=0.12.0
+
+# Flash Attention 2 (requires CUDA, may need compilation)
+# flash-attn>=2.4.0
+# Note: Flash Attention often needs to be installed from source
+# pip install flash-attn --no-build-isolation
+
+# Additional optimization libraries
+triton>=2.1.0

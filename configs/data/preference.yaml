@@ -1,0 +1,42 @@
+# Preference Dataset Configuration
+# For reward modeling, DPO, and IPO
+
+data:
+  name: "preference"
+  type: "preference"
+
+  # Dataset source
+  dataset_name: "Anthropic/hh-rlhf"  # HuggingFace dataset name
+  dataset_config: null
+  data_files: null
+  data_dir: null
+
+  # Splits
+  train_split: "train"
+  eval_split: "test"
+  test_split: null
+
+  # Sampling
+  max_train_samples: null  # Use all samples
+  max_eval_samples: 1000
+  shuffle_train: true
+
+  # Format (preference datasets have specific format)
+  prompt_column: "prompt"
+  chosen_column: "chosen"
+  rejected_column: "rejected"
+
+  # Preprocessing
+  preprocessing:
+    max_length: 512
+    max_prompt_length: 256
+    max_response_length: 256
+    min_length: 10
+
+  # Filtering
+  filter_empty: true
+  filter_duplicates: true
+
+  # Caching
+  cache_dir: null
+  use_cached: true

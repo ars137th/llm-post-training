@@ -1,0 +1,10 @@
+# Multimodal (vision-language) dependencies
+-r base.txt
+
+# Image processing
+Pillow>=10.1.0
+torchvision>=0.16.0
+
+# Multimodal metrics
+# Note: clip-score may need to be installed separately via pip
+nltk>=3.8.0

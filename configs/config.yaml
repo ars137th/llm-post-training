@@ -1,0 +1,56 @@
+# Base Configuration for LLM Post-Training
+# This file contains default settings that can be overridden
+
+defaults:
+  - model: gpt2
+  - technique: sft
+  - data: conversation
+  - _self_
+
+# Training settings
+training:
+  output_dir: "./outputs"
+  num_epochs: 3
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 4
+  learning_rate: 5e-5
+  weight_decay: 0.01
+  warmup_steps: 100
+  max_grad_norm: 1.0
+  logging_steps: 10
+  eval_steps: 500
+  save_steps: 500
+  save_total_limit: 3
+  fp16: false  # Set to true if using GPU with fp16 support
+  bf16: false  # Set to true for A100/H100 GPUs
+
+# Evaluation settings
+evaluation:
+  metrics:
+    - "loss"
+    - "perplexity"
+  eval_split: "validation"
+  do_eval: true
+
+# Logging settings
+logging:
+  use_wandb: false
+  wandb_project: "llm-post-training"
+  wandb_run_name: null  # Auto-generated if null
+  use_tensorboard: true
+  log_level: "info"
+
+# Seed for reproducibility
+seed: 42
+
+# Hardware settings
+device: "auto"  # "cuda", "cpu", or "auto"
+num_workers: 4
+
+# Checkpoint settings
+checkpoint:
+  resume_from_checkpoint: null
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false

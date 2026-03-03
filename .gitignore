@@ -1,0 +1,134 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# PyCharm
+.idea/
+
+# VSCode
+.vscode/
+*.code-workspace
+
+# Spyder
+.spyderproject
+.spyproject
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# ML/AI specific
+checkpoints/**/*.pt
+checkpoints/**/*.bin
+checkpoints/**/*.safetensors
+!checkpoints/.gitkeep
+outputs/**/*.pt
+outputs/**/*.bin
+outputs/**/*.safetensors
+!outputs/.gitkeep
+
+# Datasets (keep structure, ignore data)
+datasets/raw/**/*
+!datasets/raw/.gitkeep
+datasets/processed/**/*
+!datasets/processed/.gitkeep
+
+# W&B
+wandb/
+outputs/wandb/**/*
+!outputs/wandb/.gitkeep
+
+# TensorBoard
+outputs/tensorboard/**/*
+!outputs/tensorboard/.gitkeep
+*.tfevents.*
+
+# Logs
+outputs/logs/**/*.log
+outputs/logs/**/*.txt
+!outputs/logs/.gitkeep
+*.log
+
+# Models from HuggingFace cache
+models/
+.cache/
+huggingface/
+
+# Large files
+*.h5
+*.hdf5
+*.ckpt
+*.pth
+*.weights
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Hydra
+outputs/hydra/
+.hydra/
+multirun/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Config overrides (keep templates, ignore local overrides)
+configs/local/
+configs/**/*_override.yaml

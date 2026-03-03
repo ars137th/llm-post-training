@@ -1,0 +1,38 @@
+# Conversation Dataset Configuration
+# For supervised fine-tuning on conversational data
+
+data:
+  name: "conversation"
+  type: "text"
+
+  # Dataset source
+  dataset_name: "daily_dialog"  # HuggingFace dataset name
+  dataset_config: null
+  data_files: null
+  data_dir: null
+
+  # Splits
+  train_split: "train"
+  eval_split: "validation"
+  test_split: "test"
+
+  # Sampling
+  max_train_samples: null  # Use all samples if null
+  max_eval_samples: 1000
+  shuffle_train: true
+
+  # Format
+  format_type: "auto"  # Auto-detect format
+  prompt_column: "dialog"
+  response_column: "dialog"  # For conversation, may extract from same column
+
+  # Preprocessing
+  preprocessing:
+    lowercase: false
+    remove_special_chars: false
+    max_length: 512
+    min_length: 10
+
+  # Caching
+  cache_dir: null
+  use_cached: true

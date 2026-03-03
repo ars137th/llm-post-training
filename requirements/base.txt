@@ -1,0 +1,14 @@
+# Core dependencies for LLM post-training
+torch>=2.1.0
+transformers>=4.36.0
+peft>=0.7.0
+accelerate>=0.25.0
+datasets>=2.16.0
+evaluate>=0.4.0
+
+# Utilities
+einops>=0.7.0
+rich>=13.7.0
+numpy>=1.24.0
+tqdm>=4.65.0
+pyyaml>=6.0
