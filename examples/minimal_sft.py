@@ -8,6 +8,12 @@ Usage:
     python examples/minimal_sft.py
 """
 
+# CRITICAL: Set these BEFORE any imports to avoid multiprocessing issues on macOS
+import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
 import torch
 from transformers import TrainingArguments, Trainer
 from src.models.language import LanguageModel
