@@ -91,8 +91,8 @@ outputs/logs/**/*.txt
 !outputs/logs/.gitkeep
 *.log
 
-# Models from HuggingFace cache
-models/
+# Models from HuggingFace cache (ignore downloaded models, not src/models/ code)
+/models/
 .cache/
 huggingface/
 
