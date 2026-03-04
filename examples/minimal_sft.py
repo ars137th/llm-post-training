@@ -72,12 +72,20 @@ def main():
 
     # 6. Test generation
     print("\n🎯 Testing generation...")
+    model_wrapper.eval()  # Set to evaluation mode
     test_prompt = "What is the capital of France?"
+
+    # Tokenize and move to correct device
     encoded = processor.tokenize(test_prompt, return_tensors="pt")
+    encoded = {k: v.to(model_wrapper.device) for k, v in encoded.items()}
+
+    # Generate with attention_mask
     generated = model_wrapper.generate(
-        encoded["input_ids"],
+        input_ids=encoded["input_ids"],
+        attention_mask=encoded["attention_mask"],
         max_new_tokens=10,
         temperature=0.7,
+        pad_token_id=model_wrapper.tokenizer.pad_token_id,
     )
     output = processor.decode(generated[0])
     print(f"Prompt: {test_prompt}")
