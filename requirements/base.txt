@@ -1,7 +1,7 @@
 # Core dependencies for LLM post-training
 # Note: torch 2.0.1 is more stable on macOS with nomkl
 torch>=2.0.0,<2.2.0
-transformers>=4.35.0
+transformers>=4.35.0,<4.36.0  # 4.36+ requires PyTorch 2.4+
 peft>=0.7.0
 accelerate>=0.25.0
 datasets>=2.16.0
