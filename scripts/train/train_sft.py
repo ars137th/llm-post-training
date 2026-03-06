@@ -21,9 +21,12 @@ import os
 import sys
 from pathlib import Path
 
-# Add src to path
+# Add src to path and set up project root for Hydra
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
+
+# Hydra needs absolute path to configs
+CONFIGS_PATH = str(project_root / "configs")
 
 import torch
 from transformers import TrainingArguments, set_seed
@@ -189,7 +192,6 @@ def prepare_data(cfg: DictConfig, tokenizer):
     return train_dataset, eval_dataset
 
 
-@hydra.main(version_base=None, config_path="../../configs", config_name="config")
 def main(cfg: DictConfig):
     """Main training function."""
     console.print("[bold green]Starting SFT Training[/bold green]")
@@ -291,4 +293,10 @@ def main(cfg: DictConfig):
 
 
 if __name__ == "__main__":
-    main()
+    # Initialize Hydra with absolute config path
+    from hydra import compose, initialize_config_dir
+
+    # Use absolute path to configs directory
+    with initialize_config_dir(version_base=None, config_dir=CONFIGS_PATH):
+        cfg = compose(config_name="config", overrides=sys.argv[1:])
+        main(cfg)
