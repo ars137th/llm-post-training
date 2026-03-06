@@ -126,16 +126,22 @@ class SFTTrainer(Trainer):
         model: nn.Module,
         inputs: Dict[str, torch.Tensor],
         return_outputs: bool = False,
+        num_items_in_batch: Optional[int] = None,  # Added in transformers 4.36+
     ) -> Union[torch.Tensor, Tuple[torch.Tensor, Any]]:
         """
         Compute loss with detailed metrics.
 
         This method is called by the Trainer during training and evaluation.
 
+        Note: This method signature is compatible with both transformers <4.36 and >=4.36.
+        The num_items_in_batch parameter was added in 4.36+ but has a default value for
+        backwards compatibility.
+
         Args:
             model: The model
             inputs: Input batch with 'input_ids', 'attention_mask', 'labels'
             return_outputs: Whether to return model outputs
+            num_items_in_batch: Number of items in batch (transformers 4.36+, unused)
 
         Returns:
             Loss tensor, or (loss, outputs) if return_outputs=True
