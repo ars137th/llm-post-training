@@ -41,6 +41,7 @@ from src.data.loaders import load_dataset, split_dataset
 from src.data.processors.text import TextProcessor, create_prompt_template
 from src.core.sft.trainer import SFTTrainer, compute_sft_metrics
 from src.core.sft.collator import DataCollatorForSFT, create_sft_dataset
+from src.utils.compat import get_training_args_kwargs
 
 
 console = Console()
@@ -229,12 +230,15 @@ def main(cfg: DictConfig):
     output_dir = cfg.training.output_dir
     os.makedirs(output_dir, exist_ok=True)
 
-    # Set tensorboard logging directory via environment variable (transformers 4.36+)
-    if cfg.logging.use_tensorboard:
-        os.environ['TENSORBOARD_LOGGING_DIR'] = f"{output_dir}/logs"
+    # Prepare logging directory for tensorboard
+    logging_dir = f"{output_dir}/logs" if cfg.logging.use_tensorboard else None
 
-    training_args = TrainingArguments(
+    # Use compatibility helper for version-aware TrainingArguments
+    training_args_kwargs = get_training_args_kwargs(
         output_dir=output_dir,
+        eval_enabled=cfg.evaluation.do_eval,
+        logging_dir=logging_dir,
+        # All other arguments
         num_train_epochs=cfg.training.num_epochs,
         per_device_train_batch_size=cfg.training.per_device_train_batch_size,
         per_device_eval_batch_size=cfg.training.per_device_eval_batch_size,
@@ -243,12 +247,10 @@ def main(cfg: DictConfig):
         weight_decay=cfg.training.weight_decay,
         warmup_steps=cfg.training.warmup_steps,
         max_grad_norm=cfg.training.max_grad_norm,
-        # logging_dir is deprecated in transformers 4.36+, use env var TENSORBOARD_LOGGING_DIR instead
         logging_steps=cfg.training.logging_steps,
         eval_steps=cfg.training.eval_steps if cfg.evaluation.do_eval else None,
         save_steps=cfg.training.save_steps,
         save_total_limit=cfg.training.save_total_limit,
-        eval_strategy="steps" if cfg.evaluation.do_eval else "no",  # Renamed from evaluation_strategy in transformers 4.36+
         load_best_model_at_end=cfg.checkpoint.load_best_model_at_end,
         metric_for_best_model=cfg.checkpoint.metric_for_best_model,
         greater_is_better=cfg.checkpoint.greater_is_better,
@@ -259,6 +261,8 @@ def main(cfg: DictConfig):
         seed=cfg.seed,
         dataloader_num_workers=cfg.num_workers,
     )
+
+    training_args = TrainingArguments(**training_args_kwargs)
 
     # Create trainer
     trainer = SFTTrainer(

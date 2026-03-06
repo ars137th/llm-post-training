@@ -20,6 +20,7 @@ from dataclasses import dataclass
 import time
 
 from .loss import CausalLMLoss, FocalLoss, compute_token_accuracy, compute_perplexity
+from ...utils.compat import get_trainer_init_kwargs, training_step_accepts_num_items
 
 
 class SFTTrainer(Trainer):
@@ -80,18 +81,23 @@ class SFTTrainer(Trainer):
             num_predictions_to_log: Number of predictions to log
             **kwargs: Additional arguments for Trainer
         """
-        # Store tokenizer separately (not passed to parent in transformers 4.36+)
-        self.tokenizer = tokenizer
-
-        super().__init__(
+        # Use compatibility helper to handle tokenizer parameter correctly
+        trainer_kwargs, tokenizer_to_store = get_trainer_init_kwargs(
             model=model,
             args=args,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
+            tokenizer=tokenizer,
             data_collator=data_collator,
             compute_metrics=compute_metrics,
             **kwargs,
         )
+
+        # Store tokenizer if not passed to parent (transformers 4.36+)
+        if tokenizer_to_store:
+            self.tokenizer = tokenizer_to_store
+
+        super().__init__(**trainer_kwargs)
 
         # Setup custom loss
         loss_kwargs = loss_kwargs or {}
@@ -163,15 +169,19 @@ class SFTTrainer(Trainer):
         self,
         model: nn.Module,
         inputs: Dict[str, torch.Tensor],
-        num_items_in_batch=None,  # Added in transformers 4.36+
+        num_items_in_batch=None,  # Added in transformers 4.36+, None for backwards compatibility
     ) -> torch.Tensor:
         """
         Perform a training step with additional logging.
 
+        Note: This method signature is compatible with both transformers <4.36 and >=4.36.
+        The num_items_in_batch parameter was added in 4.36+ but has a default value for
+        backwards compatibility.
+
         Args:
             model: The model
             inputs: Input batch
-            num_items_in_batch: Number of items in batch (transformers 4.36+)
+            num_items_in_batch: Number of items in batch (transformers 4.36+, unused in <4.36)
 
         Returns:
             Loss tensor

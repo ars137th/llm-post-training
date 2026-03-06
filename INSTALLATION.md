@@ -529,6 +529,93 @@ git pull origin master  # Get the fix
 
 ---
 
+## Version Compatibility Layer
+
+This repository includes a **compatibility layer** (`src/utils/compat.py`) that automatically detects your installed library versions and adapts the code accordingly. This means the same codebase works across both:
+
+- **macOS** (transformers 4.35.x, PyTorch 2.0.x)
+- **GPU platforms** (transformers 4.36+, PyTorch 2.4+)
+
+### How It Works
+
+The compatibility layer:
+1. **Detects** your transformers and PyTorch versions at runtime
+2. **Adapts** API calls based on detected version:
+   - `evaluation_strategy` vs `eval_strategy`
+   - `logging_dir` parameter vs `TENSORBOARD_LOGGING_DIR` env var
+   - Whether to pass `tokenizer` to `Trainer.__init__()`
+   - `training_step()` method signature
+3. **Validates** compatibility with test script
+
+### Testing Compatibility
+
+Run the compatibility test to verify everything works:
+
+```bash
+python examples/test_version_compat.py
+```
+
+You should see:
+```
+✅ Using transformers 4.36+ API
+  - eval_strategy: ✓
+  - logging_dir removed: ✓
+
+ALL COMPATIBILITY TESTS PASSED! ✅
+```
+
+Or on macOS:
+```
+✅ Using transformers <4.36 API
+  - evaluation_strategy: ✓
+  - logging_dir: ✓
+
+ALL COMPATIBILITY TESTS PASSED! ✅
+```
+
+### For Developers
+
+If you're extending the codebase and encounter version-specific APIs:
+
+1. **Import compatibility helpers**:
+   ```python
+   from src.utils.compat import (
+       get_training_args_kwargs,
+       get_trainer_init_kwargs,
+       TRANSFORMERS_VERSION,
+   )
+   ```
+
+2. **Use helpers instead of hardcoding**:
+   ```python
+   # ❌ DON'T - hardcoded for one version
+   training_args = TrainingArguments(
+       eval_strategy="steps",  # Only works in 4.36+
+       ...
+   )
+
+   # ✅ DO - version-aware
+   kwargs = get_training_args_kwargs(
+       output_dir="./outputs",
+       eval_enabled=True,
+       ...
+   )
+   training_args = TrainingArguments(**kwargs)
+   ```
+
+3. **Add version checks when needed**:
+   ```python
+   from packaging import version
+   from src.utils.compat import TRANSFORMERS_VERSION
+
+   if TRANSFORMERS_VERSION >= version.parse("4.36.0"):
+       # Use new API
+   else:
+       # Use old API
+   ```
+
+---
+
 ## Quick Reference
 
 | Platform | Command | PyTorch | transformers |
