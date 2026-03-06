@@ -163,6 +163,7 @@ class SFTTrainer(Trainer):
         self,
         model: nn.Module,
         inputs: Dict[str, torch.Tensor],
+        num_items_in_batch=None,  # Added in transformers 4.36+
     ) -> torch.Tensor:
         """
         Perform a training step with additional logging.
@@ -170,6 +171,7 @@ class SFTTrainer(Trainer):
         Args:
             model: The model
             inputs: Input batch
+            num_items_in_batch: Number of items in batch (transformers 4.36+)
 
         Returns:
             Loss tensor
