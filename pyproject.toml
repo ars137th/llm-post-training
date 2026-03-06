@@ -39,6 +39,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# GPU platforms (Linux/Colab/Cloud) - latest versions, no macOS constraints
+gpu = [
+    "torch>=2.4.0",
+    "transformers>=4.36.0",
+]
 rlhf = [
     "trl>=0.7.0",
 ]
@@ -68,6 +73,9 @@ dev = [
 ]
 all = [
     "llm-post-training[rlhf,multimodal,experiment,quantization,dev]",
+]
+all-gpu = [
+    "llm-post-training[gpu,rlhf,multimodal,experiment,quantization,dev]",
 ]
 
 [project.urls]

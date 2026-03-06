@@ -1,0 +1,390 @@
+# Installation Guide
+
+## Quick Install by Platform
+
+### macOS (Apple Silicon M1/M2/M3)
+```bash
+# Create nomkl environment
+conda create -n llmpt-nomkl python=3.10 nomkl numpy=1.24.3 -y
+conda activate llmpt-nomkl
+
+# Install PyTorch 2.0.1 (compatible with nomkl)
+pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cpu
+
+# Install repository (uses macOS-compatible versions)
+git clone https://github.com/yourusername/llm-post-training.git
+cd llm-post-training
+pip install -e .
+```
+
+### Linux/Google Colab/Cloud (GPU)
+```bash
+# Install repository with latest versions
+git clone https://github.com/yourusername/llm-post-training.git
+cd llm-post-training
+pip install -e ".[gpu]"  # Uses PyTorch 2.4+, transformers 4.36+
+```
+
+---
+
+## Detailed Installation Options
+
+We provide **three ways** to install, depending on your platform:
+
+### Method 1: Direct pip install (Conservative - Works Everywhere)
+
+Uses PyTorch 2.0.1 and transformers <4.36.0 (works on macOS and GPU platforms):
+
+```bash
+pip install -e .
+```
+
+**Versions installed**:
+- PyTorch: 2.0.0-2.2.0
+- transformers: 4.35.0-4.36.0
+
+**Works on**: macOS, Linux, Colab, Cloud (but uses older versions on GPU platforms)
+
+---
+
+### Method 2: GPU-optimized install (Latest Versions)
+
+Uses PyTorch 2.4+ and transformers 4.36+ (for GPU platforms only):
+
+```bash
+pip install -e ".[gpu]"
+```
+
+**Versions installed**:
+- PyTorch: 2.4.0+
+- transformers: 4.36.0+
+
+**Works on**: Linux, Colab, Cloud with GPU
+**⚠️ Does NOT work on**: macOS (will cause BLAS crashes)
+
+---
+
+### Method 3: Manual requirements files
+
+#### For macOS:
+```bash
+pip install -r requirements/base.txt
+```
+
+Uses PyTorch 2.0.1, transformers <4.36.0 (macOS-compatible)
+
+#### For GPU platforms:
+```bash
+pip install -r requirements/gpu.txt
+```
+
+Uses PyTorch 2.4+, transformers 4.36+ (latest versions)
+
+---
+
+## Installation by Platform
+
+### macOS (Detailed)
+
+**Why special setup needed?**: macOS has BLAS library bugs that cause crashes. See [MACOS_COMPLETE_FIX.md](MACOS_COMPLETE_FIX.md) for details.
+
+```bash
+# Step 1: Create nomkl environment (forces OpenBLAS)
+conda create -n llmpt-nomkl python=3.10 nomkl numpy=1.24.3 -y
+conda activate llmpt-nomkl
+
+# Step 2: Install PyTorch 2.0.1 (compatible with nomkl)
+pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cpu
+
+# Step 3: Clone repository
+git clone https://github.com/yourusername/llm-post-training.git
+cd llm-post-training
+
+# Step 4: Install (uses conservative versions)
+pip install -e .
+
+# Step 5: Verify
+python examples/test_step_by_step.py
+```
+
+---
+
+### Google Colab
+
+**Why it's different**: Colab runs Linux with GPU, so latest versions work perfectly!
+
+```python
+# In a Colab cell
+
+# Enable GPU
+# Runtime → Change runtime type → T4 GPU
+
+# Install with latest versions
+!git clone https://github.com/yourusername/llm-post-training.git
+%cd llm-post-training
+!pip install -e ".[gpu]"  # ← Note: Uses [gpu] for latest versions
+
+# Verify GPU
+import torch
+print(f"PyTorch: {torch.__version__}")
+print(f"CUDA: {torch.cuda.is_available()}")
+print(f"GPU: {torch.cuda.get_device_name(0)}")
+
+# Run example
+!python examples/minimal_sft.py
+```
+
+---
+
+### Linux Desktop with GPU
+
+```bash
+# Step 1: Create environment
+conda create -n llmpt-gpu python=3.10 -y
+conda activate llmpt-gpu
+
+# Step 2: Install PyTorch with CUDA (replace cu118 with your CUDA version)
+pip install torch>=2.4.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# Step 3: Clone and install with GPU extras
+git clone https://github.com/yourusername/llm-post-training.git
+cd llm-post-training
+pip install -e ".[gpu]"
+
+# Step 4: Verify
+python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
+python examples/test_step_by_step.py
+```
+
+---
+
+### Databricks
+
+```python
+# In a Databricks notebook
+
+# Install from GitHub
+%sh
+git clone https://github.com/yourusername/llm-post-training.git
+cd llm-post-training
+pip install -e ".[gpu]"  # Latest versions
+
+# Verify
+import torch
+print(f"PyTorch: {torch.__version__}")
+print(f"CUDA: {torch.cuda.is_available()}")
+```
+
+---
+
+## Optional Dependencies
+
+Install additional features:
+
+```bash
+# RLHF with TRL
+pip install -e ".[rlhf]"
+
+# Multimodal models (CLIP, LLaVA)
+pip install -e ".[multimodal]"
+
+# Experiment tracking (W&B, TensorBoard)
+pip install -e ".[experiment]"
+
+# Quantization (4-bit/8-bit)
+pip install -e ".[quantization]"
+
+# Development tools
+pip install -e ".[dev]"
+
+# Everything (macOS-compatible versions)
+pip install -e ".[all]"
+
+# Everything with GPU optimization
+pip install -e ".[all-gpu]"
+```
+
+---
+
+## Comparison: What Gets Installed?
+
+### `pip install -e .` (Base - macOS Compatible)
+
+| Package | Version | Notes |
+|---------|---------|-------|
+| torch | 2.0.0-2.2.0 | macOS nomkl compatible |
+| transformers | 4.35.0-4.36.0 | Compatible with PyTorch 2.0.x |
+| peft | 0.7.0+ | Latest |
+| accelerate | 0.25.0+ | Latest |
+| datasets | 2.16.0+ | Latest |
+
+**Use when**: Running on macOS or want maximum compatibility
+
+---
+
+### `pip install -e ".[gpu]"` (GPU - Latest Versions)
+
+| Package | Version | Notes |
+|---------|---------|-------|
+| torch | 2.4.0+ | Latest stable |
+| transformers | 4.36.0+ | Latest with new features |
+| peft | 0.7.0+ | Latest |
+| accelerate | 0.25.0+ | Latest |
+| datasets | 2.16.0+ | Latest |
+
+**Use when**: Running on Linux/Colab/Cloud with GPU
+
+---
+
+## Requirements File Reference
+
+We provide three requirements files:
+
+### `requirements/base.txt` - macOS Compatible
+```txt
+torch>=2.0.0,<2.2.0
+transformers>=4.35.0,<4.36.0
+# ... other packages
+```
+**Use on**: macOS, or anywhere you want conservative versions
+
+### `requirements/gpu.txt` - GPU Optimized
+```txt
+torch>=2.4.0
+transformers>=4.36.0
+# ... other packages
+```
+**Use on**: Linux, Colab, Cloud with GPU
+
+### `requirements/rlhf.txt`, `requirements/multimodal.txt`, etc.
+Optional dependencies for specific features
+
+---
+
+## Environment Variables (macOS)
+
+On macOS, set these before running:
+
+```bash
+export TOKENIZERS_PARALLELISM=false
+export OMP_NUM_THREADS=1
+export MKL_NUM_THREADS=1
+```
+
+Or in your Python script:
+```python
+import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+```
+
+**Not needed on**: Linux, Colab, Cloud
+
+---
+
+## Verification
+
+After installation, verify everything works:
+
+```bash
+# Test all components
+python examples/test_step_by_step.py
+
+# Should see:
+# ✓ Step 1-8 all pass
+# ✅ ALL STEPS PASSED
+
+# Test training
+python examples/minimal_sft.py
+
+# Should see:
+# ✅ Setup complete!
+# 🎯 Testing generation...
+# ✨ Example complete!
+```
+
+---
+
+## Troubleshooting
+
+### "Bus error" on macOS
+**Solution**: Follow the [MACOS_COMPLETE_FIX.md](MACOS_COMPLETE_FIX.md) guide. You need the nomkl environment.
+
+### "PyTorch >= 2.4 is required but found 2.0.1"
+**Problem**: Using GPU-optimized install on macOS
+**Solution**: Use `pip install -e .` instead of `pip install -e ".[gpu]"`
+
+### "CUDA not available" on Linux
+**Problem**: PyTorch installed without CUDA support
+**Solution**: Reinstall PyTorch with correct CUDA version:
+```bash
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+```
+
+### Version conflicts
+**Solution**: Start fresh:
+```bash
+pip uninstall -y torch transformers
+# Then follow platform-specific instructions above
+```
+
+---
+
+## Quick Reference
+
+| Platform | Command | PyTorch | transformers |
+|----------|---------|---------|--------------|
+| macOS | `pip install -e .` | 2.0.1 | 4.35.x |
+| Colab | `pip install -e ".[gpu]"` | 2.4+ | 4.36+ |
+| Linux GPU | `pip install -e ".[gpu]"` | 2.4+ | 4.36+ |
+| Databricks | `pip install -e ".[gpu]"` | 2.4+ | 4.36+ |
+| Conservative | `pip install -e .` | 2.0.1 | 4.35.x |
+
+---
+
+## What's the Difference?
+
+### Why two installation methods?
+
+**macOS has BLAS bugs** with:
+- Intel MKL (Math Kernel Library)
+- PyTorch 2.4+ with certain operations
+- transformers 4.36+ (requires PyTorch 2.4+)
+
+**GPU platforms work fine** with:
+- Latest PyTorch 2.4+
+- Latest transformers 4.36+
+- All features and optimizations
+
+### Should I use `[gpu]` on macOS?
+**❌ NO** - It will cause bus errors. Use base install: `pip install -e .`
+
+### Can I use base install on GPU platforms?
+**✅ YES** - It will work, but you'll use older versions (PyTorch 2.0.1) and miss out on new features and optimizations.
+
+### Best practice?
+- **macOS**: Use base install (`pip install -e .`)
+- **GPU platforms**: Use GPU install (`pip install -e ".[gpu]"`)
+
+---
+
+## Summary
+
+We provide flexible installation to support all platforms:
+
+**One-line install**:
+```bash
+# macOS
+pip install -e .
+
+# GPU platforms
+pip install -e ".[gpu]"
+```
+
+That's it! The repository automatically handles platform differences. 🚀
+
+For more details:
+- **macOS issues**: See [MACOS_COMPLETE_FIX.md](MACOS_COMPLETE_FIX.md)
+- **Platform guide**: See [PLATFORM_GUIDE.md](PLATFORM_GUIDE.md)
+- **Setup guide**: See [SETUP.md](SETUP.md)

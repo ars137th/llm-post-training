@@ -1,0 +1,22 @@
+# GPU-optimized dependencies for Linux/Colab/Cloud platforms
+# Use this instead of base.txt when running on GPU-enabled platforms
+
+# Core dependencies - LATEST VERSIONS (no macOS constraints)
+torch>=2.4.0
+transformers>=4.36.0
+peft>=0.7.0
+accelerate>=0.25.0
+datasets>=2.16.0
+evaluate>=0.4.0
+
+# Utilities
+einops>=0.7.0
+rich>=13.7.0
+numpy>=1.24.0
+tqdm>=4.65.0
+pyyaml>=6.0
+
+# GPU-specific optimizations (optional)
+# Uncomment if you have compatible hardware:
+# flash-attn>=2.0.0  # Faster attention on A100/H100
+# xformers>=0.0.20   # Memory-efficient attention

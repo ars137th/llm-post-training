@@ -39,22 +39,29 @@ This repository provides a **hybrid approach** to learning LLM alignment techniq
 
 ### Installation
 
+**Platform-specific** installation (choose one):
+
 ```bash
 # Clone the repository
 git clone https://github.com/yourusername/llm-post-training.git
 cd llm-post-training
 
-# Install base dependencies
-pip install -r requirements/base.txt
-
-# Optional: Install RLHF dependencies
-pip install -r requirements/rlhf.txt
-
-# Optional: Install multimodal dependencies
-pip install -r requirements/multimodal.txt
-
-# Install the package in development mode
+# For macOS (Apple Silicon)
 pip install -e .
+
+# For Linux/Colab/Cloud with GPU (uses latest PyTorch/transformers)
+pip install -e ".[gpu]"
+```
+
+**📖 See [INSTALLATION.md](INSTALLATION.md) for detailed platform-specific instructions.**
+
+**Optional features**:
+```bash
+# RLHF, multimodal, experiment tracking, dev tools
+pip install -e ".[all]"
+
+# Everything with GPU optimization
+pip install -e ".[all-gpu]"
 ```
 
 ### Quick Example: Supervised Fine-Tuning
