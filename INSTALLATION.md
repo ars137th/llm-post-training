@@ -130,10 +130,15 @@ python examples/test_step_by_step.py
 # Enable GPU
 # Runtime → Change runtime type → T4 GPU
 
-# Install with latest versions
+# Clone repository
 !git clone https://github.com/yourusername/llm-post-training.git
 %cd llm-post-training
-!pip install -e ".[gpu]"  # ← Note: Uses [gpu] for latest versions
+
+# Option 1: Minimal install (for examples/minimal_sft.py only)
+!pip install -e ".[gpu]"
+
+# Option 2: Full install (RECOMMENDED - includes all features)
+!pip install -e ".[all-gpu]"
 
 # Verify GPU
 import torch
@@ -141,9 +146,14 @@ print(f"PyTorch: {torch.__version__}")
 print(f"CUDA: {torch.cuda.is_available()}")
 print(f"GPU: {torch.cuda.get_device_name(0)}")
 
-# Run example
+# Run examples
 !python examples/minimal_sft.py
+
+# Run full training scripts (requires [experiment] extras)
+!python scripts/train/train_sft.py
 ```
+
+**Recommendation**: Use `[all-gpu]` to avoid import errors when running training scripts.
 
 ---
 
@@ -190,30 +200,53 @@ print(f"CUDA: {torch.cuda.is_available()}")
 
 ## Optional Dependencies
 
-Install additional features:
+The repository has modular optional dependencies for different features.
+
+### Available Extras
+
+| Extra | Includes | Use Case | Required For |
+|-------|----------|----------|--------------|
+| `[gpu]` | PyTorch 2.4+, transformers 4.36+ | GPU platforms | Latest versions on Linux/Colab/Cloud |
+| `[macos]` | PyTorch 2.0.x, transformers 4.35.x | macOS | BLAS-compatible versions |
+| `[experiment]` | **hydra-core**, wandb, tensorboard | Config & tracking | **`scripts/train/*.py`** |
+| `[rlhf]` | trl | RLHF training | PPO/DPO with TRL |
+| `[multimodal]` | Pillow, torchvision, clip-score | Vision models | CLIP, LLaVA |
+| `[quantization]` | bitsandbytes | 4-bit/8-bit | QLoRA, memory optimization |
+| `[dev]` | pytest, black, mypy, etc. | Development | Testing, formatting |
+| `[all]` | All above (base versions) | Everything | All features (macOS versions) |
+| `[all-gpu]` | All above (GPU versions) | Everything | All features (GPU versions) |
+
+### Installation Examples
 
 ```bash
-# RLHF with TRL
-pip install -e ".[rlhf]"
+# Install base + experiment extras (for scripts/train/*.py)
+pip install -e ".[gpu,experiment]"
 
-# Multimodal models (CLIP, LLaVA)
-pip install -e ".[multimodal]"
+# Install base + multiple extras
+pip install -e ".[gpu,experiment,quantization]"
 
-# Experiment tracking (W&B, TensorBoard)
-pip install -e ".[experiment]"
-
-# Quantization (4-bit/8-bit)
-pip install -e ".[quantization]"
-
-# Development tools
-pip install -e ".[dev]"
-
-# Everything (macOS-compatible versions)
-pip install -e ".[all]"
-
-# Everything with GPU optimization
+# Install everything with GPU optimization (recommended for Colab)
 pip install -e ".[all-gpu]"
+
+# Install everything with macOS versions
+pip install -e ".[all]"
 ```
+
+### Which Extras Do I Need?
+
+**For `examples/minimal_sft.py`**:
+- ✅ Base install is enough: `pip install -e ".[gpu]"`
+
+**For `scripts/train/train_sft.py`**:
+- ⚠️ Needs `[experiment]`: `pip install -e ".[gpu,experiment]"`
+- Requires **hydra-core** for configuration management
+
+**For Google Colab** (recommended):
+- ✅ Install everything: `pip install -e ".[all-gpu]"`
+- Includes all features (W&B, quantization, etc.)
+
+**For macOS**:
+- ✅ Use `[macos]` or `[all]`: `pip install -e ".[macos,experiment]"`
 
 ---
 
@@ -338,6 +371,63 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 ```bash
 pip uninstall -y torch transformers
 # Then follow platform-specific instructions above
+```
+
+### Import Errors (ModuleNotFoundError)
+
+Common import errors and their solutions:
+
+#### `ModuleNotFoundError: No module named 'hydra'`
+
+**When**: Running `scripts/train/train_sft.py` or other training scripts
+**Problem**: Missing `[experiment]` extras
+**Solution**:
+```bash
+# Add experiment extras
+pip install -e ".[gpu,experiment]"
+
+# Or install everything
+pip install -e ".[all-gpu]"
+```
+
+**Why**: Training scripts use Hydra for configuration management, which is in optional `[experiment]` dependencies.
+
+#### `ModuleNotFoundError: No module named 'trl'`
+
+**When**: Running RLHF/PPO/DPO scripts
+**Problem**: Missing `[rlhf]` extras
+**Solution**:
+```bash
+pip install -e ".[gpu,rlhf]"
+```
+
+#### `ModuleNotFoundError: No module named 'bitsandbytes'`
+
+**When**: Using 4-bit or 8-bit quantization
+**Problem**: Missing `[quantization]` extras
+**Solution**:
+```bash
+pip install -e ".[gpu,quantization]"
+```
+
+#### `ModuleNotFoundError: No module named 'PIL'` or `'torchvision'`
+
+**When**: Using vision-language models (CLIP, LLaVA)
+**Problem**: Missing `[multimodal]` extras
+**Solution**:
+```bash
+pip install -e ".[gpu,multimodal]"
+```
+
+#### Quick Fix for All Import Errors
+
+Install everything:
+```bash
+# On GPU platforms
+pip install -e ".[all-gpu]"
+
+# On macOS
+pip install -e ".[all]"
 ```
 
 ---
