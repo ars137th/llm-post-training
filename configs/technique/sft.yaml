@@ -1,33 +1,33 @@
 # Supervised Fine-Tuning Configuration
+# Settings are merged into cfg.technique by Hydra
 
-technique:
-  name: "sft"
-  type: "supervised"
+name: "sft"
+type: "supervised"
 
-  # Loss configuration
-  loss:
-    type: "causal_lm"
-    mask_prompt: true  # Only compute loss on response tokens
+# Loss configuration
+loss:
+  type: "causal_lm"
+  mask_prompt: true  # Only compute loss on response tokens
 
-  # Training hyperparameters
-  learning_rate: 5e-5
-  num_epochs: 3
-  batch_size: 4
-  gradient_accumulation_steps: 4
+# Training hyperparameters
+learning_rate: 5e-5
+num_epochs: 3
+batch_size: 4
+gradient_accumulation_steps: 4
 
-  # Optimization
-  optimizer: "adamw"
-  weight_decay: 0.01
-  lr_scheduler: "cosine"
-  warmup_ratio: 0.1
+# Optimization
+optimizer: "adamw"
+weight_decay: 0.01
+lr_scheduler: "cosine"
+warmup_ratio: 0.1
 
-  # Regularization
-  max_grad_norm: 1.0
-  dropout: 0.1
+# Regularization
+max_grad_norm: 1.0
+dropout: 0.1
 
-  # Data processing
-  max_length: 512
-  prompt_template: "alpaca"  # "alpaca", "chatml", "llama2", "plain"
+# Data processing
+max_length: 512
+prompt_template: "alpaca"  # "alpaca", "chatml", "llama2", "plain"
 
 # Logging specific to SFT
 logging:
