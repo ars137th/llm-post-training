@@ -488,6 +488,19 @@ python scripts/train/train_sft.py data.data_files=/path/to/your/data.jsonl
 - `c4` (Common Crawl)
 - `wikipedia` (Wikipedia articles)
 
+#### `TypeError: TrainingArguments.__init__() got an unexpected keyword argument 'evaluation_strategy'`
+
+**When**: Running training scripts with transformers 4.36+
+**Problem**: API change in transformers 4.36+
+
+**Solution**: This is now fixed. The script uses `eval_strategy` instead of `evaluation_strategy`.
+
+```bash
+git pull origin master  # Get the fix
+```
+
+**Why this happened**: transformers 4.36+ renamed `evaluation_strategy` to `eval_strategy` for consistency. This only affects GPU platforms using transformers 4.36+ (Colab, Linux). macOS with transformers 4.35.x is unaffected.
+
 ---
 
 ## Quick Reference
