@@ -197,7 +197,10 @@ class SFTTrainer(Trainer):
         if self.args.gradient_accumulation_steps > 1:
             loss = loss / self.args.gradient_accumulation_steps
 
-        if self.do_grad_scaling:
+        # Handle gradient scaling (version-aware)
+        if hasattr(self, 'do_grad_scaling') and self.do_grad_scaling:
+            self.scaler.scale(loss).backward()
+        elif hasattr(self, 'use_amp') and self.use_amp and hasattr(self, 'scaler'):
             self.scaler.scale(loss).backward()
         else:
             loss.backward()
