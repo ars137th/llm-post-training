@@ -183,11 +183,13 @@ def print_version_info():
         print("    * eval_strategy (not evaluation_strategy)")
         print("    * No tokenizer in Trainer.__init__()")
         print("    * training_step() with num_items_in_batch")
+        print("    * log() with start_time parameter")
         print("    * TENSORBOARD_LOGGING_DIR env var (not logging_dir)")
     else:
         print("  - Using transformers <4.36 API")
         print("    * evaluation_strategy (not eval_strategy)")
         print("    * tokenizer in Trainer.__init__()")
         print("    * training_step() without num_items_in_batch")
+        print("    * log() without start_time parameter")
         print("    * logging_dir parameter")
     print("=" * 60)

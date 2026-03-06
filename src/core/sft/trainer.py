@@ -337,12 +337,13 @@ class SFTTrainer(Trainer):
 
         self.model.train()
 
-    def log(self, logs: Dict[str, float]) -> None:
+    def log(self, logs: Dict[str, float], start_time: Optional[float] = None) -> None:
         """
         Log metrics with timestamp.
 
         Args:
             logs: Dictionary of metrics to log
+            start_time: Optional start time (for compatibility with transformers 4.36+)
         """
         # Add timestamp
         logs['timestamp'] = time.time()
@@ -360,7 +361,13 @@ class SFTTrainer(Trainer):
         if 'train/learning_rate' in logs:
             self.training_metrics['learning_rates'].append(logs['train/learning_rate'])
 
-        super().log(logs)
+        # Call parent log with appropriate signature
+        if start_time is not None:
+            # Newer transformers versions (4.36+)
+            super().log(logs, start_time)
+        else:
+            # Older transformers versions (<4.36)
+            super().log(logs)
 
     def get_training_metrics(self) -> Dict[str, List[float]]:
         """
