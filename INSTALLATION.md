@@ -430,6 +430,34 @@ pip install -e ".[all-gpu]"
 pip install -e ".[all]"
 ```
 
+### Configuration Errors (Hydra/OmegaConf)
+
+#### `ConfigAttributeError: Key 'name' is not in struct`
+
+**When**: Running `scripts/train/train_sft.py`
+**Error message**:
+```
+omegaconf.errors.ConfigAttributeError: Key 'name' is not in struct
+    full_key: model.name
+    object_type=dict
+```
+
+**Problem**: Hydra can't find the config files
+**Cause**: You're running from a directory where the relative path to configs doesn't work
+**Solution**: This is now fixed in the latest version. Pull the latest changes:
+
+```bash
+git pull origin master
+```
+
+**What was fixed**: The script now uses absolute paths to find configs, so it works from any directory (local, Colab, Databricks).
+
+**Alternative**: If still having issues, run from repository root:
+```bash
+cd /path/to/llm-post-training
+python scripts/train/train_sft.py
+```
+
 ---
 
 ## Quick Reference
