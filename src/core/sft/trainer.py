@@ -288,60 +288,74 @@ class SFTTrainer(Trainer):
         if not hasattr(self, 'eval_dataset') or self.eval_dataset is None:
             return
 
-        self.model.eval()
+        try:
+            self.model.eval()
 
-        # Sample a few examples
-        num_samples = min(self.num_predictions_to_log, len(self.eval_dataset))
-        indices = np.random.choice(len(self.eval_dataset), num_samples, replace=False)
+            # Sample a few examples
+            num_samples = min(self.num_predictions_to_log, len(self.eval_dataset))
+            indices = np.random.choice(len(self.eval_dataset), num_samples, replace=False)
 
-        samples = []
-        for idx in indices:
-            example = self.eval_dataset[int(idx)]
+            samples = []
+            for idx in indices:
+                try:
+                    example = self.eval_dataset[int(idx)]
 
-            # Get input
-            input_ids = torch.tensor([example['input_ids']]).to(self.args.device)
-            attention_mask = torch.tensor([example['attention_mask']]).to(self.args.device)
+                    # Get input
+                    input_ids = torch.tensor([example['input_ids']]).to(self.args.device)
+                    attention_mask = torch.tensor([example['attention_mask']]).to(self.args.device)
 
-            # Truncate to get prompt only (first 50% of sequence)
-            prompt_len = max(1, len(example['input_ids']) // 2)
-            input_ids = input_ids[:, :prompt_len]
-            attention_mask = attention_mask[:, :prompt_len]
+                    # Truncate to get prompt only (first 50% of sequence)
+                    prompt_len = max(1, len(example['input_ids']) // 2)
+                    input_ids = input_ids[:, :prompt_len]
+                    attention_mask = attention_mask[:, :prompt_len]
 
-            # Generate
-            with torch.no_grad():
-                outputs = self.model.generate(
-                    input_ids=input_ids,
-                    attention_mask=attention_mask,
-                    max_new_tokens=50,
-                    do_sample=True,
-                    temperature=0.7,
-                    top_p=0.9,
-                    pad_token_id=self.tokenizer.pad_token_id,
-                    eos_token_id=self.tokenizer.eos_token_id,
-                )
+                    # Validate inputs
+                    if input_ids.shape[1] == 0:
+                        continue
 
-            # Decode
-            prompt_text = self.tokenizer.decode(input_ids[0], skip_special_tokens=True)
-            generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+                    # Generate with simpler parameters for compatibility
+                    with torch.no_grad():
+                        outputs = self.model.generate(
+                            input_ids=input_ids,
+                            attention_mask=attention_mask,
+                            max_new_tokens=50,
+                            do_sample=False,  # Use greedy decoding for stability
+                            pad_token_id=self.tokenizer.pad_token_id if self.tokenizer.pad_token_id is not None else self.tokenizer.eos_token_id,
+                            eos_token_id=self.tokenizer.eos_token_id,
+                        )
 
-            samples.append({
-                'prompt': prompt_text,
-                'generated': generated_text,
-            })
+                    # Decode
+                    prompt_text = self.tokenizer.decode(input_ids[0], skip_special_tokens=True)
+                    generated_text = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-        # Log to wandb/tensorboard if available
-        if self.args.report_to and samples:
-            log_dict = {
-                f'{prefix}/sample_{i}/prompt': s['prompt']
-                for i, s in enumerate(samples)
-            }
-            log_dict.update({
-                f'{prefix}/sample_{i}/generated': s['generated']
-                for i, s in enumerate(samples)
-            })
-            self.log(log_dict)
+                    samples.append({
+                        'prompt': prompt_text,
+                        'generated': generated_text,
+                    })
+                except Exception as e:
+                    # Skip this sample if generation fails
+                    continue
 
-        self.model.train()
+            # Log to wandb/tensorboard if available
+            if self.args.report_to and samples:
+                log_dict = {
+                    f'{prefix}/sample_{i}/prompt': s['prompt']
+                    for i, s in enumerate(samples)
+                }
+                log_dict.update({
+                    f'{prefix}/sample_{i}/generated': s['generated']
+                    for i, s in enumerate(samples)
+                })
+                self.log(log_dict)
+
+            self.model.train()
+
+        except Exception as e:
+            # If generation logging fails entirely, just skip it
+            # Training should continue without sample generation
+            import warnings
+            warnings.warn(f"Sample generation failed: {e}. Continuing without sample logging.")
+            self.model.train()
 
     def log(self, logs: Dict[str, float], start_time: Optional[float] = None) -> None:
         """
