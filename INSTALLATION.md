@@ -514,6 +514,19 @@ git pull origin master  # Get the fix
 
 **Why this happened**: transformers 4.36+ removed the `tokenizer` parameter from `Trainer.__init__()`. Our custom trainer now stores it as an instance variable instead of passing it to the parent class.
 
+#### `TypeError: SFTTrainer.training_step() takes 3 positional arguments but 4 were given`
+
+**When**: Training starts but fails on first batch with transformers 4.36+
+**Problem**: API change - `training_step()` now requires `num_items_in_batch` parameter
+
+**Solution**: This is now fixed. The method signature has been updated.
+
+```bash
+git pull origin master  # Get the fix
+```
+
+**Why this happened**: transformers 4.36+ added a `num_items_in_batch` parameter to `training_step()`. Our custom trainer now accepts this parameter with a default value for backwards compatibility.
+
 ---
 
 ## Quick Reference
