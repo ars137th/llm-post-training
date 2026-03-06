@@ -501,6 +501,19 @@ git pull origin master  # Get the fix
 
 **Why this happened**: transformers 4.36+ renamed `evaluation_strategy` to `eval_strategy` for consistency. This only affects GPU platforms using transformers 4.36+ (Colab, Linux). macOS with transformers 4.35.x is unaffected.
 
+#### `TypeError: Trainer.__init__() got an unexpected keyword argument 'tokenizer'`
+
+**When**: Running training scripts with transformers 4.36+
+**Problem**: API change - Trainer no longer accepts tokenizer parameter
+
+**Solution**: This is now fixed. The SFTTrainer stores tokenizer separately.
+
+```bash
+git pull origin master  # Get the fix
+```
+
+**Why this happened**: transformers 4.36+ removed the `tokenizer` parameter from `Trainer.__init__()`. Our custom trainer now stores it as an instance variable instead of passing it to the parent class.
+
 ---
 
 ## Quick Reference
