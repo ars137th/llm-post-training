@@ -458,6 +458,36 @@ cd /path/to/llm-post-training
 python scripts/train/train_sft.py
 ```
 
+### Dataset Loading Errors
+
+#### `RuntimeError: Dataset scripts are no longer supported`
+
+**When**: Loading certain HuggingFace datasets
+**Error message**:
+```
+RuntimeError: Dataset scripts are no longer supported, but found daily_dialog.py
+```
+
+**Problem**: The dataset uses a loading script (.py file) which is deprecated for security reasons in newer `datasets` library versions.
+
+**Solution**: This is now fixed. The default config uses `wikitext` which doesn't require scripts.
+
+**If using other datasets**: Use datasets that don't require loading scripts, or provide local data files:
+
+```bash
+# Override with a script-free dataset
+python scripts/train/train_sft.py data.dataset_name=wikitext data.dataset_config=wikitext-2-raw-v1
+
+# Or use your own data
+python scripts/train/train_sft.py data.data_files=/path/to/your/data.jsonl
+```
+
+**Working datasets** (no scripts needed):
+- `wikitext` (text completion)
+- `openwebtext` (web text)
+- `c4` (Common Crawl)
+- `wikipedia` (Wikipedia articles)
+
 ---
 
 ## Quick Reference
