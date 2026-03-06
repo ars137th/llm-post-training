@@ -80,12 +80,14 @@ class SFTTrainer(Trainer):
             num_predictions_to_log: Number of predictions to log
             **kwargs: Additional arguments for Trainer
         """
+        # Store tokenizer separately (not passed to parent in transformers 4.36+)
+        self.tokenizer = tokenizer
+
         super().__init__(
             model=model,
             args=args,
             train_dataset=train_dataset,
             eval_dataset=eval_dataset,
-            tokenizer=tokenizer,
             data_collator=data_collator,
             compute_metrics=compute_metrics,
             **kwargs,

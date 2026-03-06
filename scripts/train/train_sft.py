@@ -229,6 +229,10 @@ def main(cfg: DictConfig):
     output_dir = cfg.training.output_dir
     os.makedirs(output_dir, exist_ok=True)
 
+    # Set tensorboard logging directory via environment variable (transformers 4.36+)
+    if cfg.logging.use_tensorboard:
+        os.environ['TENSORBOARD_LOGGING_DIR'] = f"{output_dir}/logs"
+
     training_args = TrainingArguments(
         output_dir=output_dir,
         num_train_epochs=cfg.training.num_epochs,
@@ -239,7 +243,7 @@ def main(cfg: DictConfig):
         weight_decay=cfg.training.weight_decay,
         warmup_steps=cfg.training.warmup_steps,
         max_grad_norm=cfg.training.max_grad_norm,
-        logging_dir=f"{output_dir}/logs",
+        # logging_dir is deprecated in transformers 4.36+, use env var TENSORBOARD_LOGGING_DIR instead
         logging_steps=cfg.training.logging_steps,
         eval_steps=cfg.training.eval_steps if cfg.evaluation.do_eval else None,
         save_steps=cfg.training.save_steps,
