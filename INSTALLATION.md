@@ -19,10 +19,17 @@ pip install -e .
 
 ### Linux/Google Colab/Cloud (GPU)
 ```bash
-# Install repository with latest versions
+# Clone and install with latest versions
 git clone https://github.com/yourusername/llm-post-training.git
 cd llm-post-training
 pip install -e ".[gpu]"  # Uses PyTorch 2.4+, transformers 4.36+
+```
+
+### Alternative: macOS Specific Install
+```bash
+git clone https://github.com/yourusername/llm-post-training.git
+cd llm-post-training
+pip install -e ".[macos]"  # Uses PyTorch 2.0.x, transformers 4.35.x
 ```
 
 ---
@@ -31,36 +38,40 @@ pip install -e ".[gpu]"  # Uses PyTorch 2.4+, transformers 4.36+
 
 We provide **three ways** to install, depending on your platform:
 
-### Method 1: Direct pip install (Conservative - Works Everywhere)
+### Method 1: Direct pip install (Flexible - Adapts to Platform)
 
-Uses PyTorch 2.0.1 and transformers <4.36.0 (works on macOS and GPU platforms):
+Uses flexible version constraints, lets pip choose compatible versions:
 
 ```bash
 pip install -e .
 ```
 
 **Versions installed**:
-- PyTorch: 2.0.0-2.2.0
-- transformers: 4.35.0-4.36.0
+- PyTorch: 2.0.0+ (whatever's available on your platform)
+- transformers: 4.35.0+ (whatever's compatible with your PyTorch)
 
-**Works on**: macOS, Linux, Colab, Cloud (but uses older versions on GPU platforms)
+**Works on**: All platforms, but may get newer versions than needed on macOS
+**Recommended**: Use Method 2 or 3 for explicit platform control
 
 ---
 
-### Method 2: GPU-optimized install (Latest Versions)
+### Method 2: Platform-specific extras (Recommended)
 
-Uses PyTorch 2.4+ and transformers 4.36+ (for GPU platforms only):
+Uses platform-specific version constraints:
 
 ```bash
+# For macOS
+pip install -e ".[macos]"
+
+# For GPU platforms
 pip install -e ".[gpu]"
 ```
 
 **Versions installed**:
-- PyTorch: 2.4.0+
-- transformers: 4.36.0+
+- **[macos]**: PyTorch 2.0.x, transformers 4.35.x (BLAS-compatible)
+- **[gpu]**: PyTorch 2.4.0+, transformers 4.36.0+ (latest)
 
-**Works on**: Linux, Colab, Cloud with GPU
-**⚠️ Does NOT work on**: macOS (will cause BLAS crashes)
+**Recommended**: Use this method for explicit control
 
 ---
 
@@ -335,11 +346,11 @@ pip uninstall -y torch transformers
 
 | Platform | Command | PyTorch | transformers |
 |----------|---------|---------|--------------|
-| macOS | `pip install -e .` | 2.0.1 | 4.35.x |
+| macOS | `pip install -e ".[macos]"` | 2.0.x | 4.35.x |
 | Colab | `pip install -e ".[gpu]"` | 2.4+ | 4.36+ |
 | Linux GPU | `pip install -e ".[gpu]"` | 2.4+ | 4.36+ |
 | Databricks | `pip install -e ".[gpu]"` | 2.4+ | 4.36+ |
-| Conservative | `pip install -e .` | 2.0.1 | 4.35.x |
+| Flexible | `pip install -e .` | Latest available | Latest compatible |
 
 ---
 
@@ -358,14 +369,14 @@ pip uninstall -y torch transformers
 - All features and optimizations
 
 ### Should I use `[gpu]` on macOS?
-**❌ NO** - It will cause bus errors. Use base install: `pip install -e .`
+**❌ NO** - It will cause bus errors. Use `pip install -e ".[macos]"` or requirements/base.txt
 
 ### Can I use base install on GPU platforms?
-**✅ YES** - It will work, but you'll use older versions (PyTorch 2.0.1) and miss out on new features and optimizations.
+**✅ YES** - It will work, but versions will depend on what's available on your platform. Use `pip install -e ".[gpu]"` for explicit latest versions.
 
 ### Best practice?
-- **macOS**: Use base install (`pip install -e .`)
-- **GPU platforms**: Use GPU install (`pip install -e ".[gpu]"`)
+- **macOS**: Use `pip install -e ".[macos]"` or `pip install -r requirements/base.txt && pip install -e .`
+- **GPU platforms**: Use `pip install -e ".[gpu]"`
 
 ---
 
@@ -376,7 +387,7 @@ We provide flexible installation to support all platforms:
 **One-line install**:
 ```bash
 # macOS
-pip install -e .
+pip install -e ".[macos]"
 
 # GPU platforms
 pip install -e ".[gpu]"

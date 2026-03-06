@@ -46,8 +46,12 @@ This repository provides a **hybrid approach** to learning LLM alignment techniq
 git clone https://github.com/yourusername/llm-post-training.git
 cd llm-post-training
 
-# For macOS (Apple Silicon)
+# For macOS (Apple Silicon) - Method 1: Use requirements file
+pip install -r requirements/base.txt
 pip install -e .
+
+# For macOS (Apple Silicon) - Method 2: Use extras
+pip install -e ".[macos]"
 
 # For Linux/Colab/Cloud with GPU (uses latest PyTorch/transformers)
 pip install -e ".[gpu]"

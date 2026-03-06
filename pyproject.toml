@@ -26,8 +26,11 @@ classifiers = [
 ]
 
 dependencies = [
-    "torch>=2.0.0,<2.2.0",
-    "transformers>=4.35.0,<4.36.0",  # 4.36+ requires PyTorch 2.4+
+    # Note: Version constraints depend on platform
+    # - macOS: Use requirements/base.txt or install torch==2.0.1 first
+    # - GPU platforms: Use [gpu] extras for latest versions
+    "torch>=2.0.0",
+    "transformers>=4.35.0",
     "peft>=0.7.0",
     "accelerate>=0.25.0",
     "datasets>=2.16.0",
@@ -39,7 +42,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# GPU platforms (Linux/Colab/Cloud) - latest versions, no macOS constraints
+# macOS (Apple Silicon) - specific versions for BLAS compatibility
+macos = [
+    "torch>=2.0.0,<2.2.0",
+    "transformers>=4.35.0,<4.36.0",
+]
+# GPU platforms (Linux/Colab/Cloud) - latest versions
 gpu = [
     "torch>=2.4.0",
     "transformers>=4.36.0",
