@@ -195,13 +195,6 @@ def prepare_data(cfg: DictConfig, tokenizer):
 def main(cfg: DictConfig):
     """Main training function."""
     console.print("[bold green]Starting SFT Training[/bold green]")
-
-    # Debug: Print what's actually in the config
-    console.print("\n[bold yellow]DEBUG: Config structure:[/bold yellow]")
-    console.print(f"Config keys: {list(cfg.keys())}")
-    if 'model' in cfg:
-        console.print(f"Model keys: {list(cfg.model.keys()) if hasattr(cfg.model, 'keys') else 'Not a dict'}")
-
     print_config(cfg)
 
     # Set seed
@@ -307,21 +300,7 @@ if __name__ == "__main__":
     # Clear any existing Hydra instance
     GlobalHydra.instance().clear()
 
-    # Debug: Print paths
-    print(f"Script location: {Path(__file__).resolve()}")
-    print(f"Project root: {project_root}")
-    print(f"Config path: {CONFIGS_PATH}")
-    print(f"Config path exists: {Path(CONFIGS_PATH).exists()}")
-    print(f"Config file exists: {(Path(CONFIGS_PATH) / 'config.yaml').exists()}")
-
     # Use absolute path to configs directory
-    try:
-        with initialize_config_dir(version_base=None, config_dir=CONFIGS_PATH, job_name="train_sft"):
-            cfg = compose(config_name="config", overrides=sys.argv[1:])
-            print(f"Loaded config keys: {list(cfg.keys())}")
-            main(cfg)
-    except Exception as e:
-        print(f"Error loading config: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    with initialize_config_dir(version_base=None, config_dir=CONFIGS_PATH, job_name="train_sft"):
+        cfg = compose(config_name="config", overrides=sys.argv[1:])
+        main(cfg)
