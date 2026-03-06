@@ -244,7 +244,7 @@ def main(cfg: DictConfig):
         eval_steps=cfg.training.eval_steps if cfg.evaluation.do_eval else None,
         save_steps=cfg.training.save_steps,
         save_total_limit=cfg.training.save_total_limit,
-        evaluation_strategy="steps" if cfg.evaluation.do_eval else "no",
+        eval_strategy="steps" if cfg.evaluation.do_eval else "no",  # Renamed from evaluation_strategy in transformers 4.36+
         load_best_model_at_end=cfg.checkpoint.load_best_model_at_end,
         metric_for_best_model=cfg.checkpoint.metric_for_best_model,
         greater_is_better=cfg.checkpoint.greater_is_better,
