@@ -6,8 +6,9 @@ name: "conversation"
 type: "text"
 
 # Dataset source
-dataset_name: "daily_dialog"  # HuggingFace dataset name
-dataset_config: null
+# Using wikitext as it's simple and doesn't require scripts
+dataset_name: "wikitext"  # HuggingFace dataset name
+dataset_config: "wikitext-2-raw-v1"  # Smaller version for quick testing
 data_files: null
 data_dir: null
 
@@ -17,8 +18,8 @@ eval_split: "validation"
 test_split: "test"
 
 # Sampling
-max_train_samples: null  # Use all samples if null
-max_eval_samples: 1000
+max_train_samples: 100  # Small sample for quick testing
+max_eval_samples: 20   # Small eval set
 shuffle_train: true
 
 # Format

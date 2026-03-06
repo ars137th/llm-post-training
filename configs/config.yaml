@@ -10,10 +10,10 @@ defaults:
 # Training settings
 training:
   output_dir: "./outputs"
-  num_epochs: 3
-  per_device_train_batch_size: 4
-  per_device_eval_batch_size: 8
-  gradient_accumulation_steps: 4
+  num_epochs: 1  # Reduced for quick testing
+  per_device_train_batch_size: 2  # Smaller batch for memory
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 2
   learning_rate: 5e-5
   weight_decay: 0.01
   warmup_steps: 100
