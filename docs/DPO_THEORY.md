@@ -588,3 +588,220 @@ DPO shows that **complex RL may not be necessary** for aligning LLMs. The trend 
 **Further Reading:**
 - RLHF survey: https://arxiv.org/abs/2203.02155
 - Alignment research: https://www.anthropic.com/research
+
+---
+
+## Implementation Approach: Why HuggingFace Trainer?
+
+### Design Decision: Pragmatic vs Pure Educational
+
+Our DPO implementation makes a **deliberate trade-off** between pragmatism and educational transparency.
+
+#### What We Use: HuggingFace Trainer
+
+```python
+class DPOTrainer(Trainer):
+    """Extends HuggingFace Trainer for DPO."""
+    
+    def compute_loss(self, model, inputs, return_outputs=False):
+        """Custom DPO loss computation - this is where DPO happens!"""
+        # Forward through policy and reference models
+        # Compute log probabilities
+        # Calculate DPO loss
+        return loss
+```
+
+**What Trainer handles for us:**
+- Training loop (epochs, batches, gradient accumulation)
+- Device management (CPU/GPU/multi-GPU)
+- Mixed precision (fp16/bf16)
+- Checkpointing and resuming
+- Logging (tensorboard, wandb)
+- Evaluation and metrics
+- Learning rate scheduling
+- Gradient clipping
+
+**What we implement (the interesting part):**
+- DPO loss computation (`compute_loss`)
+- Log probability calculation
+- Implicit reward tracking
+- KL divergence monitoring
+
+### Why This Approach?
+
+#### Pros ✅
+1. **Focus on What Matters**: DPO is essentially supervised learning with a custom loss
+2. **Less Boilerplate**: ~400 lines vs ~800 lines for custom loop
+3. **Battle-Tested**: Trainer handles edge cases we'd otherwise have to debug
+4. **Practical**: Users can actually train models without debugging infrastructure
+5. **Still Educational**: The **core algorithm** (DPO loss) is fully implemented and visible
+
+#### Cons ❌
+1. **Hidden Training Loop**: Don't see the actual `for batch in dataloader` loop
+2. **Abstraction Leaks**: Sometimes need to work around Trainer assumptions
+3. **Less Transparent**: Harder to see exactly when forward/backward happens
+
+### What Does the Hidden Loop Look Like?
+
+If we wrote it manually, the training loop would be:
+
+```python
+def train_dpo_manual(
+    policy_model,
+    reference_model,
+    train_dataset,
+    num_epochs=1,
+    learning_rate=5e-7,
+):
+    """Custom DPO training loop (educational)."""
+    optimizer = torch.optim.AdamW(policy_model.parameters(), lr=learning_rate)
+    dataloader = DataLoader(train_dataset, batch_size=2)
+    
+    for epoch in range(num_epochs):
+        for batch in dataloader:
+            # 1. Forward pass through policy
+            policy_chosen_logps = compute_log_probs(
+                policy_model, batch['chosen_input_ids']
+            )
+            policy_rejected_logps = compute_log_probs(
+                policy_model, batch['rejected_input_ids']
+            )
+            
+            # 2. Forward pass through reference (no grad)
+            with torch.no_grad():
+                ref_chosen_logps = compute_log_probs(
+                    reference_model, batch['chosen_input_ids']
+                )
+                ref_rejected_logps = compute_log_probs(
+                    reference_model, batch['rejected_input_ids']
+                )
+            
+            # 3. Compute DPO loss
+            loss = dpo_loss(
+                policy_chosen_logps,
+                policy_rejected_logps,
+                ref_chosen_logps,
+                ref_rejected_logps,
+                beta=0.1,
+            )
+            
+            # 4. Backward pass
+            loss.backward()
+            
+            # 5. Optimizer step
+            optimizer.step()
+            optimizer.zero_grad()
+            
+            # 6. Logging (if needed)
+            if step % logging_steps == 0:
+                print(f"Loss: {loss.item():.4f}")
+```
+
+**That's it!** DPO training is just supervised learning. The magic is in the loss function, not the training loop.
+
+### Why Not Custom Loop for DPO?
+
+**DPO is fundamentally supervised learning:**
+- Standard training loop (forward → loss → backward → step)
+- No rollouts, no advantages, no policy/value updates
+- The innovation is the **loss function**, not the training procedure
+
+**Compare to PPO (Phase 5)**, which **requires** a custom loop:
+- Two-phase algorithm: rollout then update
+- Generate samples with current policy
+- Compute advantages from value function
+- Multiple update epochs on same batch
+- Clipped policy objective
+- Separate value function updates
+
+**Our strategy:**
+- **DPO (Phase 4)**: Use Trainer, focus on loss function (pragmatic)
+- **PPO (Phase 5)**: Full custom loop, expose all RL details (educational)
+- **Result**: Users see both approaches, understand the difference
+
+### Where to Find the Interesting Code
+
+Even with Trainer, the **algorithmic core** is fully visible:
+
+1. **Loss Functions** (`src/core/dpo/loss.py`):
+   - `dpo_loss()`: The core DPO algorithm (lines 68-158)
+   - `compute_sequence_log_probs()`: Log probability computation (lines 17-65)
+   - `ipo_loss()`: IPO variant (lines 254-313)
+
+2. **Trainer** (`src/core/dpo/trainer.py`):
+   - `compute_loss()`: Where DPO happens (lines 118-243)
+   - Forward passes through policy and reference
+   - Log probability calculations
+   - Loss computation and metric tracking
+
+3. **Training Script** (`scripts/train/train_dpo.py`):
+   - Data loading and preprocessing
+   - Model initialization (policy + reference)
+   - Trainer setup and configuration
+   - Evaluation and result reporting
+
+### Educational Value Preserved
+
+**You still learn:**
+- ✅ How DPO loss is computed mathematically
+- ✅ Why we need policy and reference models
+- ✅ How log probabilities are calculated
+- ✅ What implicit rewards mean
+- ✅ How KL divergence is tracked
+- ✅ Difference between DPO and IPO loss
+
+**You don't see:**
+- ❌ The literal `for batch in dataloader` loop
+- ❌ Exact timing of forward/backward passes
+- ❌ How gradient accumulation works internally
+
+**Trade-off accepted** because:
+- Training loop is standard PyTorch (not DPO-specific)
+- Users can learn that from any PyTorch tutorial
+- The **DPO algorithm** is what matters, and that's fully implemented
+
+### Alternative: Custom Loop Available
+
+If you want to see a manual training loop, check out:
+- **Phase 5 (PPO)**: Full custom RL training loop (coming soon)
+- **Notebooks**: Interactive examples with explicit loops
+- **Simple example**: `examples/minimal_dpo.py` (if added)
+
+### For Researchers and Advanced Users
+
+If you need **full control** and want to write your own loop:
+
+```python
+from src.core.dpo.loss import dpo_loss, compute_sequence_log_probs
+
+# Your custom training loop here
+# Use our loss functions but write your own loop
+# Useful for: research, custom sampling, non-standard training
+```
+
+Our loss functions are standalone and don't depend on Trainer!
+
+---
+
+## Summary: Implementation Philosophy
+
+**Core Principle**: Focus educational effort where it matters most.
+
+**For DPO:**
+- ✅ Custom loss function (the innovation)
+- ✅ Clear documentation and theory
+- ⚖️ Standard training loop (via Trainer)
+
+**For PPO (Phase 5):**
+- ✅ Custom loss function
+- ✅ Custom training loop (essential to understand RL)
+- ✅ Clear documentation and theory
+
+**Result**: 
+- Users learn the **algorithms** (DPO, PPO)
+- Users get **working code** they can actually use
+- Users see different implementation approaches
+- Balance between education and practicality
+
+This is an **educational repository that produces usable models**, not a pure teaching tool or a pure production library. The Trainer decision reflects that balance.
+
