@@ -188,19 +188,18 @@ def main(cfg: DictConfig):
 
     # Load policy model (starts from SFT model)
     console.print("\n[bold cyan]Loading policy model (trainable)...[/bold cyan]")
+    if cfg.device == "cpu":
+        console.print("[yellow]Using CPU (MPS compatibility mode)[/yellow]")
+
     policy_model = LanguageModel.from_pretrained(
         model_name=cfg.model.name,
         use_lora=cfg.model.use_lora,
         lora_config=OmegaConf.to_container(cfg.model.lora_config, resolve=True) if cfg.model.use_lora else None,
         use_4bit=cfg.model.get('use_4bit', False),
         use_8bit=cfg.model.get('use_8bit', False),
+        device=cfg.device if cfg.device != "auto" else None,
         trust_remote_code=True,
     )
-
-    # Force to CPU if specified (workaround for MPS limitations)
-    if cfg.device == "cpu":
-        console.print("[yellow]Forcing model to CPU (MPS compatibility mode)[/yellow]")
-        policy_model = policy_model.cpu()
 
     print_model_info(policy_model, "Policy Model")
 
@@ -211,12 +210,9 @@ def main(cfg: DictConfig):
         use_lora=False,  # Reference doesn't need LoRA
         use_4bit=cfg.model.get('use_4bit', False),
         use_8bit=cfg.model.get('use_8bit', False),
+        device=cfg.device if cfg.device != "auto" else None,
         trust_remote_code=True,
     )
-
-    # Force to CPU if specified
-    if cfg.device == "cpu":
-        reference_model = reference_model.cpu()
 
     print_model_info(reference_model, "Reference Model")
 
