@@ -294,6 +294,24 @@ class RewardModelTrainer(Trainer):
         """
         return self.training_metrics
 
+    def _remove_unused_columns(self, dataset, description: Optional[str] = None):
+        """
+        Override to prevent removal of our custom columns.
+
+        The parent Trainer removes columns that don't match model signature,
+        but we use custom column names (chosen_input_ids, rejected_input_ids, etc.)
+        that are handled in compute_loss().
+
+        Args:
+            dataset: Dataset to process
+            description: Description for logging
+
+        Returns:
+            Dataset unchanged (don't remove any columns)
+        """
+        # Don't remove any columns - we handle them in compute_loss()
+        return dataset
+
 
 def compute_reward_metrics(eval_pred: EvalPrediction) -> Dict[str, float]:
     """
