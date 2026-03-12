@@ -273,10 +273,12 @@ def main(cfg: DictConfig):
     training_args = TrainingArguments(**training_args_kwargs)
 
     # Create trainer
+    # Note: DPOTrainer expects PreTrainedModel, not LanguageModel wrapper
+    # Pass the inner models (policy_model.model and reference_model.model)
     console.print(f"\n[bold cyan]Creating DPO Trainer (beta={cfg.technique.beta}, loss_type={cfg.technique.loss_type})...[/bold cyan]")
     trainer = DPOTrainer(
-        model=policy_model,
-        ref_model=reference_model,
+        model=policy_model.model,  # Pass inner model, not wrapper
+        ref_model=reference_model.model,  # Pass inner model, not wrapper
         args=training_args,
         train_dataset=train_dataset,
         eval_dataset=eval_dataset,
@@ -292,7 +294,7 @@ def main(cfg: DictConfig):
     console.print("\n[bold green]Starting training...[/bold green]")
     trainer.train(resume_from_checkpoint=cfg.checkpoint.resume_from_checkpoint)
 
-    # Save final model
+    # Save final model (use wrapper's save method)
     console.print("\n[bold cyan]Saving policy model...[/bold cyan]")
     final_model_path = f"{output_dir}/final_model"
     policy_model.save_pretrained(final_model_path)
