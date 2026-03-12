@@ -1,0 +1,76 @@
+# @package _global_
+
+# Experiment: Train GPT-2 reward model on synthetic preference data
+# Quick test to validate reward modeling pipeline
+# Usage: python scripts/train/train_reward_model.py experiment=reward_gpt2_synthetic
+
+defaults:
+  - override /model: gpt2
+  - override /technique: reward_model
+  - override /data: preference
+
+# Model configuration
+model:
+  name: "gpt2"
+  use_lora: false
+  use_4bit: false
+  use_8bit: false
+
+# Reward model specific
+technique:
+  freeze_base_model: false
+  loss:
+    margin: 0.0
+  logging:
+    log_rewards: true
+    num_rewards_to_log: 5
+
+# Data configuration - synthetic for fast testing
+data:
+  use_synthetic: true
+  num_train_examples: 500
+  num_eval_examples: 100
+  format: null
+
+# Training configuration
+training:
+  output_dir: "./outputs/reward_gpt2_synthetic"
+  num_epochs: 1
+  per_device_train_batch_size: 4
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 2
+  learning_rate: 1e-5
+  weight_decay: 0.01
+  warmup_steps: 50
+  max_grad_norm: 1.0
+  logging_steps: 10
+  eval_steps: 100
+  save_steps: 200
+  save_total_limit: 2
+  fp16: false
+  bf16: false
+
+# Evaluation
+evaluation:
+  do_eval: true
+
+# Logging
+logging:
+  use_wandb: false
+  use_tensorboard: true
+  wandb_project: "llm-post-training"
+  wandb_run_name: "reward_gpt2_synthetic"
+
+# Tokenizer
+tokenizer:
+  max_length: 512
+
+# Checkpoint
+checkpoint:
+  resume_from_checkpoint: null
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_accuracy"
+  greater_is_better: true
+
+# Seed
+seed: 42

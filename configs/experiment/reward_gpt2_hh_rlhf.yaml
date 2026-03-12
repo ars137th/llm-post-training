@@ -1,0 +1,86 @@
+# @package _global_
+
+# Experiment: Train GPT-2 reward model on Anthropic HH-RLHF dataset
+# Real preference data for production reward model
+# Usage: python scripts/train/train_reward_model.py experiment=reward_gpt2_hh_rlhf
+
+defaults:
+  - override /model: gpt2
+  - override /technique: reward_model
+  - override /data: preference
+
+# Model configuration
+model:
+  name: "gpt2"
+  use_lora: true  # Use LoRA for memory efficiency
+  lora_config:
+    r: 16
+    lora_alpha: 32
+    lora_dropout: 0.05
+    target_modules: ["c_attn", "c_proj"]
+    bias: "none"
+    task_type: "CAUSAL_LM"
+
+# Reward model specific
+technique:
+  freeze_base_model: false
+  loss:
+    margin: 0.0
+  logging:
+    log_rewards: true
+    num_rewards_to_log: 5
+
+# Data configuration - real Anthropic HH-RLHF data
+data:
+  use_synthetic: false
+  dataset_name: "Anthropic/hh-rlhf"
+  dataset_config: null
+  train_split: "train"
+  eval_split: "test"
+  num_train_examples: 10000  # Use subset for faster training
+  num_eval_examples: 1000
+  format: "anthropic"  # Parse conversational format
+  cache_dir: null
+
+# Training configuration
+training:
+  output_dir: "./outputs/reward_gpt2_hh_rlhf"
+  num_epochs: 1
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 4  # Effective batch = 8
+  learning_rate: 1e-5
+  weight_decay: 0.01
+  warmup_steps: 100
+  max_grad_norm: 1.0
+  logging_steps: 20
+  eval_steps: 500
+  save_steps: 1000
+  save_total_limit: 2
+  fp16: false  # Set to true for GPU
+  bf16: false
+
+# Evaluation
+evaluation:
+  do_eval: true
+
+# Logging
+logging:
+  use_wandb: false
+  use_tensorboard: true
+  wandb_project: "llm-post-training"
+  wandb_run_name: "reward_gpt2_hh_rlhf"
+
+# Tokenizer
+tokenizer:
+  max_length: 512
+
+# Checkpoint
+checkpoint:
+  resume_from_checkpoint: null
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_accuracy"
+  greater_is_better: true
+
+# Seed
+seed: 42

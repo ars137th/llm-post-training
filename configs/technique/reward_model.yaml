@@ -1,0 +1,51 @@
+# Reward Model Training Configuration
+# Settings are merged into cfg.technique by Hydra
+
+name: "reward_model"
+type: "preference_learning"
+
+# Reward model architecture
+freeze_base_model: false  # Whether to freeze base model and only train value head
+
+# Loss configuration
+loss:
+  type: "bradley_terry"
+  margin: 0.0  # Margin for Bradley-Terry loss (higher = stronger separation)
+
+# Training hyperparameters
+learning_rate: 1e-5  # Lower LR than SFT (fine-tuning a pre-trained SFT model)
+num_epochs: 1  # Usually need fewer epochs than SFT
+batch_size: 2  # Smaller batch due to processing pairs
+gradient_accumulation_steps: 4  # Effective batch size = 8
+
+# Optimization
+optimizer: "adamw"
+weight_decay: 0.01
+lr_scheduler: "linear"
+warmup_ratio: 0.1
+
+# Regularization
+max_grad_norm: 1.0
+dropout: 0.0  # Usually no dropout for reward models
+
+# Data processing
+max_length: 512  # Max sequence length for both chosen and rejected
+
+# Logging specific to reward modeling
+logging:
+  log_rewards: true  # Log sample reward values during training
+  num_rewards_to_log: 5  # Number of reward samples to log
+  log_reward_distribution: true  # Log distribution statistics
+
+# Evaluation metrics
+evaluation:
+  metrics:
+    - "ranking_accuracy"  # Primary metric: % of pairs where R(chosen) > R(rejected)
+    - "reward_margin"  # Average separation between chosen and rejected
+    - "calibration"  # How well confidence matches accuracy
+
+# Expected performance thresholds (for validation)
+expected_performance:
+  min_accuracy: 0.55  # Should be better than random (0.5)
+  good_accuracy: 0.65  # Decent performance
+  excellent_accuracy: 0.75  # Very good reward model
