@@ -54,6 +54,9 @@ def get_training_args_kwargs(
     """
     training_kwargs = kwargs.copy()
 
+    # Always include output_dir (required by TrainingArguments)
+    training_kwargs['output_dir'] = output_dir
+
     # Handle evaluation_strategy vs eval_strategy
     if TRANSFORMERS_VERSION >= TRANSFORMERS_4_36:
         # New API (4.36+)
