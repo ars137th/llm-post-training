@@ -90,6 +90,44 @@ trainer.train()
 
 See `examples/minimal_sft.py` for a complete working example in under 50 lines.
 
+## Platform Compatibility
+
+This repository works on **all major platforms**, with some considerations:
+
+| Platform | Status | Best For | Notes |
+|----------|--------|----------|-------|
+| **Linux + NVIDIA GPU** | ✅ Fully Supported | Production training | All features, best performance |
+| **Google Colab** | ✅ Fully Supported | Experiments, learning | Free GPU, recommended |
+| **macOS (Apple Silicon)** | ⚠️ CPU Recommended | Development, testing | MPS has limitations (see below) |
+| **Windows + NVIDIA GPU** | ✅ Fully Supported | Production training | Same as Linux |
+
+### Apple Silicon (MPS) Limitations
+
+**What is MPS?** Metal Performance Shaders - Apple's GPU framework for M1/M2/M3/M4 chips.
+
+**Current Issues:**
+- Some PyTorch operations not yet implemented on MPS (e.g., `log_sigmoid`)
+- Affects reward modeling and some advanced techniques
+- PyTorch team actively adding support: https://github.com/pytorch/pytorch/issues/77764
+
+**Recommended Approach for macOS:**
+```bash
+# Use CPU for stable training (works perfectly)
+python scripts/train/train_reward_model.py device=cpu
+
+# Or use Google Colab for GPU acceleration (free)
+# See notebooks/02_reward_modeling_colab.ipynb
+```
+
+**Performance:** CPU training on M1/M2 is 10-15x slower than NVIDIA GPU, but sufficient for:
+- ✅ Small models (GPT-2, OPT-350m)
+- ✅ Development and testing
+- ✅ Learning and experimentation
+
+For production training, use Google Colab (free) or cloud GPUs.
+
+📖 **See [docs/PLATFORM_COMPATIBILITY.md](docs/PLATFORM_COMPATIBILITY.md) for detailed platform guide.**
+
 ## Repository Structure
 
 ```
