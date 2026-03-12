@@ -1,0 +1,97 @@
+# DPO (Direct Preference Optimization) Training Configuration
+# This file is used by scripts/train/train_dpo.py
+
+defaults:
+  - model: gpt2
+  - technique: dpo
+  - data: preference
+  - _self_
+
+# Training settings (optimized for DPO)
+training:
+  output_dir: "./outputs/dpo"
+  num_epochs: 1  # Typically 1 epoch is sufficient for DPO
+  per_device_train_batch_size: 2  # Smaller due to processing pairs
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 8  # Effective batch = 16 (larger is better for DPO)
+  learning_rate: 5e-7  # Much lower than SFT or reward modeling
+  weight_decay: 0.0  # Often no weight decay for DPO
+  warmup_steps: 100
+  max_grad_norm: 1.0
+  logging_steps: 10
+  eval_steps: 250  # More frequent evaluation
+  save_steps: 500
+  save_strategy: "steps"  # "no", "steps", or "epoch"
+  evaluation_strategy: "steps"  # "no", "steps", or "epoch"
+  save_total_limit: 2
+  fp16: false  # Set to true if using GPU with fp16 support
+  bf16: false  # Set to true for A100/H100 GPUs
+
+# Data settings (specific to DPO)
+data:
+  # Use synthetic data for quick testing
+  use_synthetic: true
+  num_train_examples: 500  # Number of synthetic examples for training
+  num_eval_examples: 100   # Number of synthetic examples for evaluation
+
+  # For real datasets (set use_synthetic: false and uncomment)
+  # dataset_name: "Anthropic/hh-rlhf"
+  # dataset_config: null
+  # train_split: "train"
+  # eval_split: "test"
+  # num_train_examples: null  # Use all available
+  # num_eval_examples: 1000
+
+  # Data format
+  format: null  # Set to "anthropic" for Anthropic/hh-rlhf dataset
+  cache_dir: null
+
+# Evaluation settings
+evaluation:
+  do_eval: true
+  eval_split: null  # Not used with synthetic data
+  metrics:
+    - "accuracy"
+    - "reward_margin"
+    - "kl_divergence"
+
+# Logging settings
+logging:
+  use_wandb: false
+  wandb_project: "llm-post-training"
+  wandb_run_name: null  # Auto-generated if null
+  use_tensorboard: true
+  log_level: "info"
+
+# Seed for reproducibility
+seed: 42
+
+# Hardware settings
+device: "auto"  # "cuda", "cpu", "mps", or "auto"
+num_workers: 4
+
+# Checkpoint settings
+checkpoint:
+  resume_from_checkpoint: null
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_accuracy"  # Rank by accuracy
+  greater_is_better: true  # Higher accuracy is better
+
+# Tokenizer settings
+tokenizer:
+  max_length: 512
+  padding: "max_length"
+  truncation: true
+
+# Model settings (merged from model/*.yaml)
+model:
+  use_lora: true  # Recommended for DPO (more stable)
+  use_4bit: false
+  use_8bit: false
+
+# DPO-specific notes:
+# - Beta (0.1-0.5): Controls KL divergence from reference
+# - Lower learning rate than SFT or reward modeling (5e-7 vs 1e-5)
+# - Typically 1 epoch is sufficient
+# - Larger effective batch size is better (16-32)
+# - More stable than PPO, similar or better performance

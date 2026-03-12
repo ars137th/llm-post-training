@@ -1,0 +1,84 @@
+# @package _global_
+
+# Experiment: Train GPT-2 with DPO on synthetic preference data
+# Quick test to validate DPO pipeline
+# Usage: python scripts/train/train_dpo.py experiment=dpo_gpt2_synthetic
+
+defaults:
+  - override /model: gpt2
+  - override /technique: dpo
+  - override /data: preference
+
+# Model configuration
+model:
+  name: "gpt2"
+  use_lora: true  # Recommended for DPO
+  use_4bit: false
+  use_8bit: false
+  lora_config:
+    r: 8
+    lora_alpha: 16
+    target_modules: ["c_attn"]
+    lora_dropout: 0.05
+    bias: "none"
+
+# DPO specific
+technique:
+  beta: 0.1  # KL penalty coefficient
+  loss_type: "dpo"  # or "ipo"
+  logging:
+    log_rewards: true
+    num_rewards_to_log: 5
+
+# Data configuration - synthetic for fast testing
+data:
+  use_synthetic: true
+  num_train_examples: 500
+  num_eval_examples: 100
+  format: null
+
+# Training configuration (DPO-optimized)
+training:
+  output_dir: "./outputs/dpo_gpt2_synthetic"
+  num_epochs: 1  # Usually 1 epoch is enough
+  per_device_train_batch_size: 2
+  per_device_eval_batch_size: 4
+  gradient_accumulation_steps: 8  # Effective batch = 16
+  learning_rate: 5e-7  # Much lower than SFT
+  weight_decay: 0.0  # Often no weight decay
+  warmup_steps: 50
+  max_grad_norm: 1.0
+  logging_steps: 10
+  eval_steps: 100
+  save_steps: 200
+  save_total_limit: 2
+  fp16: false
+  bf16: false
+
+# Evaluation
+evaluation:
+  do_eval: true
+
+# Logging
+logging:
+  use_wandb: false
+  use_tensorboard: true
+  wandb_project: "llm-post-training"
+  wandb_run_name: "dpo_gpt2_synthetic"
+
+# Tokenizer
+tokenizer:
+  max_length: 512
+
+# Checkpoint
+checkpoint:
+  resume_from_checkpoint: null
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_accuracy"
+  greater_is_better: true
+
+# Seed
+seed: 42
+
+# Device
+device: "auto"

@@ -1,40 +1,62 @@
-# Direct Preference Optimization Configuration
+# Direct Preference Optimization (DPO) Configuration
+# Settings are merged into cfg.technique by Hydra
 
-technique:
-  name: "dpo"
-  type: "preference"
+name: "dpo"
+type: "preference_learning"
 
-  # DPO-specific parameters
-  beta: 0.1  # KL divergence coefficient (higher = stay closer to reference)
-  loss_type: "sigmoid"  # "sigmoid" or "hinge"
+# DPO-specific parameters
+beta: 0.1  # Temperature parameter controlling KL divergence (typical: 0.1-0.5)
+           # Higher beta = stay closer to reference model (more conservative)
+           # Lower beta = more aggressive optimization (risk overfitting)
 
-  # Reference model
-  reference_model:
-    use_same_as_policy: false  # If true, creates copy; if false, loads separately
-    freeze: true  # Reference model should always be frozen
+loss_type: "dpo"  # "dpo" or "ipo"
+                  # dpo: Standard DPO with log-sigmoid loss
+                  # ipo: Identity Preference Optimization with squared loss (more robust)
 
-  # Training hyperparameters
-  learning_rate: 5e-6  # Typically lower than SFT
-  num_epochs: 1
-  batch_size: 2  # Smaller due to paired examples
-  gradient_accumulation_steps: 8
+# Training hyperparameters (DPO-specific recommendations)
+learning_rate: 5e-7  # Much lower than SFT or reward modeling
+                     # DPO is sensitive to learning rate
+num_epochs: 1  # Typically 1 epoch is sufficient
+               # More epochs can cause overfitting to preferences
+batch_size: 2  # Smaller batch due to processing pairs (chosen + rejected)
+gradient_accumulation_steps: 8  # Effective batch size = 16 (larger is better)
 
-  # Optimization
-  optimizer: "adamw"
-  weight_decay: 0.01
-  lr_scheduler: "linear"
-  warmup_ratio: 0.1
+# Optimization
+optimizer: "adamw"
+weight_decay: 0.0  # Often no weight decay for DPO
+lr_scheduler: "linear"
+warmup_ratio: 0.1  # Small warmup
 
-  # Regularization
-  max_grad_norm: 1.0
+# Regularization
+max_grad_norm: 1.0  # Gradient clipping
+dropout: 0.0
 
-  # Data processing
-  max_length: 512
-  max_prompt_length: 256
+# Data processing
+max_length: 512  # Max sequence length for both chosen and rejected
 
 # Logging specific to DPO
 logging:
-  log_predictions: true
-  num_predictions_to_log: 3
-  log_preference_accuracy: true
-  log_reward_margin: true
+  log_rewards: true  # Log implicit reward values during training
+  num_rewards_to_log: 5  # Number of reward samples to log
+  log_kl_divergence: true  # Log KL divergence from reference
+  log_reward_margins: true  # Log reward margins
+
+# Evaluation metrics
+evaluation:
+  metrics:
+    - "accuracy"  # Primary metric: % of pairs where implicit R(chosen) > R(rejected)
+    - "reward_margin"  # Average separation between chosen and rejected rewards
+    - "kl_divergence"  # KL divergence from reference model
+
+# Expected performance thresholds
+expected_performance:
+  min_accuracy: 0.55  # Should be better than random (0.5)
+  good_accuracy: 0.65  # Decent DPO performance
+  excellent_accuracy: 0.70  # Very good (matches or exceeds PPO)
+
+# DPO vs PPO comparison notes:
+# - DPO is simpler (no separate reward model or RL)
+# - DPO is more stable (no RL divergence issues)
+# - DPO uses lower learning rate (5e-7 vs 1e-5)
+# - DPO needs fewer epochs (1 vs 2-3)
+# - DPO performance typically matches or exceeds PPO
