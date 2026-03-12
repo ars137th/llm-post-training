@@ -72,13 +72,18 @@ def print_model_info(model: LanguageModel, model_name: str = "Model"):
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="green")
 
-    table.add_row("Base Model", model.config._name_or_path)
-    table.add_row("Total Parameters", f"{model.num_parameters:,}")
-    table.add_row("Trainable Parameters", f"{model.num_trainable_parameters:,}")
-    table.add_row(
-        "Trainable %",
-        f"{model.percent_trainable:.2f}%"
-    )
+    # Access config through the inner model
+    config_name = model.model.config._name_or_path if hasattr(model.model.config, '_name_or_path') else "unknown"
+    table.add_row("Base Model", config_name)
+
+    # Parameters
+    num_params = model.num_parameters
+    num_trainable = model.num_trainable_parameters
+    percent_trainable = (num_trainable / num_params * 100) if num_params > 0 else 0
+
+    table.add_row("Total Parameters", f"{num_params:,}")
+    table.add_row("Trainable Parameters", f"{num_trainable:,}")
+    table.add_row("Trainable %", f"{percent_trainable:.2f}%")
     table.add_row("Device", str(model.device))
     table.add_row("Is PEFT Model", str(model.is_peft_model))
 
