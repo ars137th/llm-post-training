@@ -5,7 +5,7 @@ Core components for PPO training:
 - Loss functions (clipped objective, value loss, entropy)
 - Generalized Advantage Estimation (GAE)
 - Rollout buffer for trajectory storage
-- PPO trainer with custom loop (to be implemented)
+- PPO trainer with custom training loop
 """
 
 from .loss import (
@@ -35,6 +35,13 @@ from .buffer import (
     create_rollout_batch,
 )
 
+from .trainer import (
+    PPOConfig,
+    PPOTrainer,
+    FixedKLController,
+    AdaptiveKLController,
+)
+
 __all__ = [
     # Loss functions
     'compute_log_probs',
@@ -57,4 +64,9 @@ __all__ = [
     'RolloutBatch',
     'RolloutBuffer',
     'create_rollout_batch',
+    # Trainer
+    'PPOConfig',
+    'PPOTrainer',
+    'FixedKLController',
+    'AdaptiveKLController',
 ]
