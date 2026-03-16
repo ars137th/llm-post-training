@@ -1,0 +1,71 @@
+# PPO (Proximal Policy Optimization) Technique Configuration
+
+name: "ppo"
+
+# Core PPO hyperparameters
+clip_range: 0.2  # PPO clipping parameter (epsilon)
+  # Typical: 0.1 - 0.3
+  # Higher = larger policy updates allowed
+  # Lower = more conservative updates
+
+# GAE (Generalized Advantage Estimation)
+gamma: 0.99  # Discount factor
+  # Typical: 0.95 - 1.0
+  # Higher = care more about future rewards
+
+lam: 0.95  # GAE lambda
+  # Typical: 0.9 - 0.98
+  # Higher = lower bias, higher variance
+  # Lower = higher bias, lower variance
+
+# Loss coefficients
+vf_coef: 0.5  # Value function loss coefficient (c1)
+  # Typical: 0.5 - 2.0
+  # Weight of critic loss relative to policy loss
+
+ent_coef: 0.01  # Entropy coefficient (c2)
+  # Typical: 0.0 - 0.01
+  # Higher = more exploration (diversity)
+  # Too high = random behavior
+
+kl_coef: 0.05  # KL divergence coefficient (beta)
+  # Typical: 0.01 - 0.1
+  # Higher = stay closer to reference policy
+  # Lower = allow more drift (higher reward)
+
+# Training dynamics
+ppo_epochs: 4  # Update epochs per rollout
+  # Typical: 2 - 8
+  # More = better data utilization
+  # Too many = overfitting to rollout data
+
+mini_batch_size: 8  # Mini-batch size for updates
+  # Typical: 4 - 32
+  # Larger = more stable gradients
+  # Smaller = more update steps
+
+# Optimization
+learning_rate: 1.0e-6  # Learning rate
+  # Typical: 1e-7 - 1e-5
+  # Much lower than SFT!
+  # PPO is sensitive to LR
+
+max_grad_norm: 1.0  # Gradient clipping
+  # Typical: 0.5 - 2.0
+  # Prevents exploding gradients
+
+# Adaptive KL (optional)
+use_adaptive_kl: false
+target_kl: 0.01  # Target KL per token
+  # If KL > target: increase kl_coef
+  # If KL < target: decrease kl_coef
+
+# Normalization
+normalize_advantages: true  # Standardize advantages
+  # Almost always true (stabilizes training)
+
+# Tips for tuning:
+# - If KL explodes: ↓ LR, ↑ kl_coef, ↓ clip_range
+# - If reward plateaus: ↑ LR, ↓ kl_coef, ↑ clip_range
+# - If unstable: ↑ batch_size, ↓ lam, ↑ grad_norm
+# - If slow: ↑ ppo_epochs, ↑ mini_batch_size

@@ -1,0 +1,83 @@
+# @package _global_
+
+# PPO Training on GPT-2 with Synthetic Data
+# Quick experiment for testing and development
+
+defaults:
+  - override /model: gpt2
+  - override /technique: ppo
+  - override /data: prompts
+
+# Model settings
+model:
+  name: "gpt2"
+  use_lora: true
+  lora_config:
+    r: 16
+    lora_alpha: 32
+    lora_dropout: 0.05
+    target_modules: ["c_attn", "c_proj"]
+    bias: "none"
+    task_type: "CAUSAL_LM"
+
+# Data settings (synthetic for quick testing)
+data:
+  use_synthetic: true
+  num_prompts: 100
+  max_prompt_length: 256
+  max_response_length: 128
+
+# Training settings (reduced for quick testing)
+training:
+  output_dir: "./outputs/ppo_gpt2_synthetic"
+
+  # Rollout
+  num_rollouts: 20  # Quick test
+  batch_size: 16  # Small batch
+
+  # PPO
+  ppo_epochs: 4
+  mini_batch_size: 4
+  clip_range: 0.2
+
+  # GAE
+  gamma: 0.99
+  lam: 0.95
+
+  # Loss coefficients
+  vf_coef: 0.5
+  ent_coef: 0.01
+  kl_coef: 0.05
+
+  # Optimization
+  learning_rate: 1.0e-6
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+  # Generation
+  temperature: 0.7
+  top_p: 0.9
+  top_k: 50
+
+  # Logging
+  log_every: 1
+  save_every: 5
+
+# Reward model settings
+reward_model:
+  from_checkpoint: false  # Create from base model (testing)
+
+# Logging
+logging:
+  use_wandb: false
+  use_tensorboard: false
+
+# System
+device: "auto"
+seed: 42
+
+# Expected results:
+# - Training time: ~20-30 minutes on CPU
+# - Final reward: Should improve from ~0 to ~0.5
+# - KL divergence: Should stay < 0.01
+# - Good for testing the pipeline works

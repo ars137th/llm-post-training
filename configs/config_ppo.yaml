@@ -1,0 +1,96 @@
+# PPO/RLHF Training Configuration
+# Main config file for PPO training
+
+defaults:
+  - model: gpt2
+  - technique: ppo
+  - data: prompts
+  - _self_
+
+# Training configuration
+training:
+  output_dir: "./outputs/ppo_${model.name}"
+
+  # Rollout settings
+  num_rollouts: 100
+  batch_size: 32  # Prompts per rollout
+
+  # PPO settings
+  ppo_epochs: 4  # Update epochs per rollout
+  mini_batch_size: 8  # Mini-batch size for updates
+  clip_range: 0.2  # PPO clip parameter (epsilon)
+  clip_range_vf: null  # Optional value function clipping
+
+  # GAE settings
+  gamma: 0.99  # Discount factor
+  lam: 0.95  # GAE lambda
+
+  # Loss coefficients
+  vf_coef: 0.5  # Value loss coefficient
+  ent_coef: 0.01  # Entropy coefficient
+  kl_coef: 0.05  # KL penalty coefficient (beta)
+
+  # Optimization
+  learning_rate: 1.0e-6
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+  # Generation settings
+  temperature: 1.0
+  top_p: 0.9
+  top_k: 50
+
+  # Adaptive KL (optional)
+  use_adaptive_kl: false
+  target_kl: 0.01
+  kl_horizon: 10000
+
+  # Normalization
+  normalize_advantages: true
+  normalize_rewards: false
+  reward_clip: null  # Optional: clip rewards to [-X, X]
+
+  # Logging
+  log_every: 1
+  save_every: 10
+
+  # Mixed precision
+  fp16: false
+  bf16: false
+
+# Data configuration
+data:
+  use_synthetic: false
+  num_prompts: 1000
+  prompt_file: "./datasets/prompts.txt"
+  max_prompt_length: 512
+  max_response_length: 256
+
+# Reward model configuration
+reward_model:
+  from_checkpoint: false  # If true, load from checkpoint
+  checkpoint_path: "./outputs/reward_tutorial/final_model"  # Path to reward model
+
+# Model configuration (inherited from model/*.yaml)
+# model:
+#   name: "gpt2"
+#   use_lora: true
+#   lora_config: {...}
+
+# Logging
+logging:
+  use_wandb: false
+  wandb_project: "llm-post-training"
+  wandb_run_name: "ppo_${model.name}"
+  use_tensorboard: false
+
+# Evaluation (optional)
+evaluation:
+  do_eval: false
+  eval_every: 10  # Evaluate every N rollouts
+  eval_prompts: 50
+
+# System
+device: "auto"  # "auto", "cuda", "cpu", "mps"
+seed: 42
+num_workers: 0

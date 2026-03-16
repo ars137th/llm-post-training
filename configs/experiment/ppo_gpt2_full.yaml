@@ -1,0 +1,113 @@
+# @package _global_
+
+# PPO Training on GPT-2 with Real Reward Model
+# Full-scale production experiment
+
+defaults:
+  - override /model: gpt2
+  - override /technique: ppo
+  - override /data: prompts
+
+# Model settings
+model:
+  name: "gpt2"
+  use_lora: true
+  lora_config:
+    r: 16
+    lora_alpha: 32
+    lora_dropout: 0.05
+    target_modules: ["c_attn", "c_proj"]
+    bias: "none"
+    task_type: "CAUSAL_LM"
+
+# Data settings
+data:
+  use_synthetic: false
+  prompt_file: "./datasets/hh_rlhf_prompts.txt"  # Extract from Anthropic HH-RLHF
+  num_prompts: 5000  # Full dataset
+  max_prompt_length: 512
+  max_response_length: 256
+
+# Training settings
+training:
+  output_dir: "./outputs/ppo_gpt2_full"
+
+  # Rollout
+  num_rollouts: 100  # Full training
+  batch_size: 32  # Standard batch
+
+  # PPO
+  ppo_epochs: 4
+  mini_batch_size: 8
+  clip_range: 0.2
+
+  # GAE
+  gamma: 0.99
+  lam: 0.95
+
+  # Loss coefficients
+  vf_coef: 0.5
+  ent_coef: 0.01
+  kl_coef: 0.05
+
+  # Optimization
+  learning_rate: 1.0e-6
+  weight_decay: 0.01
+  max_grad_norm: 1.0
+
+  # Generation
+  temperature: 1.0
+  top_p: 0.9
+  top_k: 50
+
+  # Adaptive KL
+  use_adaptive_kl: true
+  target_kl: 0.01
+
+  # Normalization
+  normalize_advantages: true
+  reward_clip: 10.0  # Prevent extreme rewards
+
+  # Logging
+  log_every: 1
+  save_every: 10
+
+# Reward model settings
+reward_model:
+  from_checkpoint: true  # Load pre-trained reward model
+  checkpoint_path: "./outputs/reward_model_hh_rlhf/final_model"  # From Phase 3
+
+# Logging
+logging:
+  use_wandb: true
+  wandb_project: "llm-post-training"
+  wandb_run_name: "ppo_gpt2_full_${now:%Y%m%d_%H%M%S}"
+  use_tensorboard: true
+
+# Evaluation
+evaluation:
+  do_eval: true
+  eval_every: 10
+  eval_prompts: 100
+
+# System
+device: "cuda"  # Use GPU
+seed: 42
+
+# Expected results:
+# - Training time: ~10-20 hours on single GPU
+# - Final reward: Should improve significantly
+# - KL divergence: Should stay < 0.01 with adaptive KL
+# - Produces high-quality, helpful responses
+# - Ready for production use
+
+# Prerequisites:
+# - Must have trained reward model from Phase 3
+# - Must have prompts extracted from dataset
+# - Requires GPU with 16GB+ VRAM (or use gradient checkpointing)
+
+# Tips:
+# - Monitor KL closely (should stay below 0.01)
+# - If KL explodes: lower LR or increase kl_coef
+# - If reward plateaus: check reward model quality
+# - Compare with DPO baseline (Phase 4)
