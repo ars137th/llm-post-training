@@ -302,7 +302,7 @@ def main(cfg: DictConfig):
     console.print("\n[bold cyan]Creating PPO Trainer...[/bold cyan]")
     trainer = PPOTrainer(
         actor=actor.model,  # Pass inner model
-        critic=critic.model,  # Pass inner model with value head
+        critic=critic,  # Pass RewardModel wrapper (has value head)
         reference=reference.model,  # Pass inner model
         reward_model=reward_model,  # Pass RewardModel wrapper
         tokenizer=actor.tokenizer,

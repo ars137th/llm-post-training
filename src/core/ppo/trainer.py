@@ -112,7 +112,7 @@ class PPOTrainer:
     def __init__(
         self,
         actor: PreTrainedModel,
-        critic: PreTrainedModel,
+        critic: RewardModel,  # RewardModel with value head
         reference: PreTrainedModel,
         reward_model: RewardModel,
         tokenizer: PreTrainedTokenizer,
@@ -124,7 +124,7 @@ class PPOTrainer:
 
         Args:
             actor: Policy model (trainable)
-            critic: Value function model (trainable)
+            critic: Value function (RewardModel with value head, trainable)
             reference: Reference policy (frozen)
             reward_model: Reward model (frozen)
             tokenizer: Tokenizer
@@ -352,23 +352,19 @@ class PPOTrainer:
         Returns:
             values: Value estimates [batch_size]
         """
-        # Forward through critic (which has a value head)
-        # Assuming critic is a model with a value head that outputs scalars
-        # This depends on your critic architecture
+        # Forward through critic (RewardModel with value head)
+        # RewardModel.forward returns scalar values directly
         values = self.critic(
             input_ids=input_ids,
             attention_mask=attention_mask,
+            return_dict=False,  # Get tensor directly
         )
 
-        if isinstance(values, tuple):
-            values = values[0]
-
-        # If critic outputs per-token values, take mean or last
+        # Ensure it's 1D
         if values.dim() > 1:
-            # Take last non-padded token value
-            values = values[torch.arange(values.size(0)), attention_mask.sum(dim=1) - 1]
+            values = values.squeeze()
 
-        return values.squeeze()
+        return values
 
     def rollout(self, prompts: List[str]) -> RolloutBuffer:
         """
