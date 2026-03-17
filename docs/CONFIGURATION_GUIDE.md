@@ -6,6 +6,7 @@ This document explains how we use Hydra and OmegaConf for configuration manageme
 - [What is Hydra?](#what-is-hydra)
 - [What is OmegaConf?](#what-is-omegaconf)
 - [Repository Configuration Structure](#repository-configuration-structure)
+- [⚠️ CRITICAL: Understanding `_self_` and Config Merge Order](#️-critical-understanding-_self_-and-config-merge-order)
 - [The `cfg` Pattern](#the-cfg-pattern)
 - [Command-Line Overrides](#command-line-overrides)
 - [Creating Experiment Configs](#creating-experiment-configs)
@@ -98,6 +99,282 @@ defaults:
 ```
 
 **Key concept:** Files listed in `defaults` are loaded and merged together. Later files override earlier ones. `_self_` determines when the current file's settings are applied.
+
+---
+
+## ⚠️ CRITICAL: Understanding `_self_` and Config Merge Order
+
+**This is NOT a bug, but an expected Hydra pattern that is easy to get wrong.**
+
+### The Problem: Experiment Configs Not Working
+
+The position of `_self_` in the `defaults` list controls **when** that config file's values are applied in the merge order. If you place `_self_` in the wrong position, your experiment configs won't override base configs.
+
+**Real bug we encountered:**
+```yaml
+# ❌ WRONG - Base config was like this initially:
+defaults:
+  - model: gpt2
+  - technique: dpo
+  - data: preference
+  - optional experiment: null  # Experiment loads HERE
+  - _self_                     # Base config overrides it! ❌
+
+data:
+  use_synthetic: true  # Base default
+```
+
+**What happens:**
+1. Load `model/gpt2.yaml` ✅
+2. Load `technique/dpo.yaml` ✅
+3. Load `data/preference.yaml` ✅
+4. Load `experiment/dpo_gpt2_hh_rlhf.yaml` (sets `use_synthetic: false`) ✅
+5. **Apply base config's `_self_`** (sets `use_synthetic: true`) ❌ **BASE WINS!**
+
+**Result:** Even though experiment config says `use_synthetic: false`, the final value is `true` because base config applied last.
+
+### The Fix: Position `_self_` Correctly
+
+```yaml
+# ✅ CORRECT - All our base configs now look like this:
+defaults:
+  - model: gpt2
+  - technique: dpo
+  - data: preference
+  - _self_                     # Apply base config values first ✅
+  - optional experiment: null  # Then experiment overrides them ✅
+
+data:
+  # NOTE: These are BASE DEFAULTS. Experiment configs override these values.
+  use_synthetic: true
+  num_train_examples: 500
+```
+
+**What happens:**
+1. Load `model/gpt2.yaml` ✅
+2. Load `technique/dpo.yaml` ✅
+3. Load `data/preference.yaml` ✅
+4. **Apply base config's `_self_`** (sets `use_synthetic: true`) ✅
+5. Load `experiment/dpo_gpt2_hh_rlhf.yaml` (sets `use_synthetic: false`) ✅ **EXPERIMENT WINS!**
+
+**Result:** Final value is `use_synthetic: false` as expected. 🎉
+
+### Visual Example: Merge Order Matters
+
+**Example 1: Base config without proper `_self_` positioning**
+
+```yaml
+# configs/config_reward.yaml
+defaults:
+  - model: gpt2
+  - optional experiment: null
+  - _self_  # ❌ Applied LAST, overrides experiment
+
+data:
+  use_synthetic: true  # This wins even if experiment says false!
+  num_train_examples: 500
+```
+
+**Merge order:** model → experiment → **base (wins!)**
+
+```yaml
+# configs/experiment/reward_gpt2_hh_rlhf.yaml
+data:
+  use_synthetic: false       # ❌ Gets overridden by base!
+  dataset_name: "Anthropic/hh-rlhf"
+  num_train_examples: 10000  # ❌ Gets overridden by base!
+```
+
+**Final config:**
+```yaml
+data:
+  use_synthetic: true        # ❌ Base value (wrong!)
+  dataset_name: "Anthropic/hh-rlhf"  # ✅ Experiment value
+  num_train_examples: 500    # ❌ Base value (wrong!)
+```
+
+**Example 2: Base config with correct `_self_` positioning**
+
+```yaml
+# configs/config_reward.yaml
+defaults:
+  - model: gpt2
+  - _self_  # ✅ Applied BEFORE experiment
+  - optional experiment: null
+
+data:
+  use_synthetic: true  # Base default, but experiment can override
+  num_train_examples: 500
+```
+
+**Merge order:** model → **base** → experiment (wins!)
+
+```yaml
+# configs/experiment/reward_gpt2_hh_rlhf.yaml
+data:
+  use_synthetic: false       # ✅ Overrides base!
+  dataset_name: "Anthropic/hh-rlhf"
+  num_train_examples: 10000  # ✅ Overrides base!
+```
+
+**Final config:**
+```yaml
+data:
+  use_synthetic: false       # ✅ Experiment value (correct!)
+  dataset_name: "Anthropic/hh-rlhf"  # ✅ Experiment value
+  num_train_examples: 10000  # ✅ Experiment value (correct!)
+```
+
+### Rules for `_self_` Positioning
+
+**1. Base configs (config.yaml, config_reward.yaml, config_dpo.yaml, config_ppo.yaml):**
+```yaml
+defaults:
+  - model: gpt2
+  - technique: dpo
+  - data: preference
+  - _self_                     # ✅ BEFORE optional experiment
+  - optional experiment: null  # Lets experiments override us
+```
+
+**2. Experiment configs (experiment/xxx.yaml):**
+```yaml
+# @package _global_
+
+defaults:
+  - override /model: gpt2
+  - override /technique: dpo
+  - override /data: preference
+  - _self_  # ✅ Apply our overrides last
+
+data:
+  use_synthetic: false  # Override base config
+```
+
+**Why experiment configs need `_self_` too:**
+- Ensures experiment's own values take priority
+- Prevents nested config groups from overriding experiment settings
+
+### When Order Matters Most
+
+**Scenario 1: Experiment configs (our bug)**
+- **Problem:** Experiment says use real data, but synthetic data is used
+- **Cause:** Base config's `_self_` came after `optional experiment`
+- **Fix:** Move `_self_` before `optional experiment` in base config
+
+**Scenario 2: Nested config groups**
+```yaml
+# model/gpt2.yaml
+name: "gpt2"
+hidden_size: 768
+
+# Your config
+defaults:
+  - model: gpt2
+  - _self_
+
+model:
+  hidden_size: 1024  # Override nested config
+
+# Result: hidden_size = 1024 (your value wins)
+```
+
+Without `_self_`, `hidden_size` would be 768 from `model/gpt2.yaml`.
+
+**Scenario 3: Multiple inheritance**
+```yaml
+defaults:
+  - base_config
+  - _self_
+  - advanced_config  # Overrides both base_config and _self_
+
+# Merge order: base_config → this file → advanced_config
+```
+
+### Debugging Config Merge Issues
+
+We created `scripts/debug_config.py` to diagnose these issues:
+
+```bash
+# Debug what config values are actually loaded
+python scripts/debug_config.py experiment=reward_gpt2_hh_rlhf
+
+# Output shows:
+# [DATA CONFIGURATION]
+#   use_synthetic: False  ✅ (should be False for this experiment)
+#   dataset_name: Anthropic/hh-rlhf
+#   format: anthropic
+```
+
+**If values are wrong:**
+1. Check `_self_` position in base config
+2. Verify experiment config has `_self_` directive
+3. Clear Hydra cache: `rm -rf .hydra/` and `rm -rf outputs/.hydra/`
+4. Check for typos in config file names
+
+### Common Pitfalls
+
+**Pitfall 1: Forgetting `_self_` in experiment configs**
+```yaml
+# ❌ Missing _self_
+defaults:
+  - override /model: gpt2
+  - override /technique: dpo
+  # Missing _self_!
+
+data:
+  use_synthetic: false  # Might get overridden by nested configs
+```
+
+**Pitfall 2: `_self_` in wrong position in base configs**
+```yaml
+# ❌ _self_ after optional experiment
+defaults:
+  - model: gpt2
+  - optional experiment: null  # Experiment loads here
+  - _self_  # Base config overrides experiment!
+```
+
+**Pitfall 3: Not using `override /` prefix in experiment configs**
+```yaml
+# ❌ Without override prefix
+defaults:
+  - model: gpt2  # Doesn't override, just loads
+
+# ✅ With override prefix
+defaults:
+  - override /model: gpt2  # Explicitly overrides
+```
+
+### Summary: The Golden Rules
+
+1. **Base configs:** Put `_self_` **BEFORE** `optional experiment: null`
+   ```yaml
+   defaults:
+     - model: gpt2
+     - _self_                     # ← HERE (before experiment)
+     - optional experiment: null
+   ```
+
+2. **Experiment configs:** Put `_self_` **LAST** in defaults
+   ```yaml
+   defaults:
+     - override /model: gpt2
+     - override /technique: dpo
+     - _self_  # ← HERE (last)
+   ```
+
+3. **When in doubt:** Use `scripts/debug_config.py` to see actual values
+
+4. **Remember:** This is NOT a bug—it's a powerful feature that gives you precise control over config composition!
+
+### References
+
+- **Hydra Defaults List:** https://hydra.cc/docs/advanced/defaults_list/
+- **Hydra Composition Order:** https://hydra.cc/docs/advanced/composition_order/
+- **Our docs:**
+  - `docs/REWARD_MODELING_CONFIGURATION.md` - Detailed example of this pattern
+  - `scripts/debug_config.py` - Debug tool for config issues
 
 ---
 
@@ -466,6 +743,8 @@ model:
   name: "gpt2"  # Overrides the name from model/gpt2.yaml
 ```
 
+**⚠️ CRITICAL:** The position of `_self_` is crucial! See the [Understanding `_self_` and Config Merge Order](#️-critical-understanding-_self_-and-config-merge-order) section for detailed examples and common pitfalls.
+
 ### 5. Validate Configs Early
 
 Check required fields at the start of your training function:
@@ -675,14 +954,28 @@ python script.py model.name=gpt2
 
 ### Config Values Not Updating
 
-**Problem:** `_self_` in wrong place in defaults list.
+**Problem:** `_self_` in wrong place in defaults list, causing experiment configs not to override base configs.
 
-**Solution:** Put `_self_` after other defaults to ensure overrides apply:
+**Solution:** For base configs, put `_self_` **BEFORE** `optional experiment: null`:
 ```yaml
+# Base config (config_reward.yaml, config_dpo.yaml, etc.)
 defaults:
   - model: gpt2
-  - _self_  # This file overrides model/gpt2.yaml
+  - technique: dpo
+  - _self_                     # Apply base values first
+  - optional experiment: null  # Let experiments override
 ```
+
+For experiment configs, put `_self_` **LAST**:
+```yaml
+# Experiment config
+defaults:
+  - override /model: gpt2
+  - override /technique: dpo
+  - _self_  # Apply experiment values last
+```
+
+**⚠️ See detailed explanation:** [Understanding `_self_` and Config Merge Order](#️-critical-understanding-_self_-and-config-merge-order)
 
 ### Type Errors
 
@@ -716,7 +1009,9 @@ python script.py model.layers=[1,2,3]
 - OmegaConf Primer: https://omegaconf.readthedocs.io/en/latest/usage.html
 
 **Related Docs in This Repo:**
+- `docs/REWARD_MODELING_CONFIGURATION.md` - Reward modeling config guide with `_self_` examples
 - `docs/DPO_CONFIGURATION.md` - DPO-specific config guide (includes HH-RLHF dataset)
+- `scripts/debug_config.py` - Debug tool for diagnosing config merge issues
 - `configs/technique/ppo.yaml` - PPO hyperparameters with inline docs
 - `configs/technique/dpo.yaml` - DPO hyperparameters with inline docs
 
@@ -786,6 +1081,29 @@ training:
   output_dir: "./outputs/my_experiment"
 ```
 
+### ⚠️ Critical Reminder: `_self_` Positioning
+
+**For base configs:**
+```yaml
+defaults:
+  - model: gpt2
+  - _self_                     # BEFORE optional experiment
+  - optional experiment: null
+```
+
+**For experiment configs:**
+```yaml
+defaults:
+  - override /model: gpt2
+  - _self_  # LAST in the list
+```
+
+**Why this matters:** Wrong `_self_` position = experiment configs won't override base configs!
+
+See full details: [Understanding `_self_` and Config Merge Order](#️-critical-understanding-_self_-and-config-merge-order)
+
 ---
 
 **That's it!** You now understand how Hydra and OmegaConf power our configuration system. This makes experimenting with different hyperparameters, models, and datasets as simple as changing a command-line argument.
+
+**Remember:** The `_self_` directive is a powerful tool for precise config control—use it correctly!
