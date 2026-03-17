@@ -10,18 +10,49 @@ Before starting, you need:
 
 ### Where to Get a Reward Model
 
-**Option 1: Train locally using notebook**
-- Run `notebooks/02_reward_modeling.ipynb`
-- Output: `outputs/reward_tutorial/final_model/`
-- Takes ~10-15 minutes on CPU, ~2 minutes on GPU
+**Option 1: Train on Colab (Recommended)**
+- Open `notebooks/02_reward_modeling_colab.ipynb` in Colab
+- Run all cells (~15-30 minutes on T4 GPU)
+- Saves to Google Drive automatically
+- Then use that model for PPO training
 
-**Option 2: Use existing local model**
+**Option 2: Train locally using notebook**
+- Run `notebooks/02_reward_modeling.ipynb` locally
+- Output: `outputs/reward_tutorial/final_model/`
+- Takes ~10-15 minutes on CPU, ~2 minutes on local GPU
+- Upload to Colab using instructions below
+
+**Option 3: Use existing local model**
 - If you already trained one, it's in `outputs/reward_model/final_model/`
 - Check: `ls outputs/reward_model/final_model/` should show `model.safetensors`
+- Upload to Colab using instructions below
 
-**Option 3: Skip for testing**
+**Option 4: Skip for testing**
 - See "Quick Start (Without Prerequisites)" section below
 - Uses synthetic data and creates reward model on-the-fly (for testing only)
+
+---
+
+## Recommended Workflow: Train Reward Model on Colab First
+
+Before running PPO, train a reward model on Colab:
+
+1. **Open the reward modeling notebook:**
+   - Go to: `notebooks/02_reward_modeling_colab.ipynb`
+   - Click "Open in Colab" badge at the top
+   - Or manually upload to Colab
+
+2. **Run the notebook:**
+   - Enable GPU: Runtime → Change runtime type → T4 GPU
+   - Run all cells
+   - Quick test: ~5 minutes (1K examples)
+   - Full training: ~30 minutes (10K examples from Anthropic HH-RLHF)
+
+3. **Save to Google Drive:**
+   - The notebook saves automatically to: `/content/drive/MyDrive/llm_models/reward_model`
+   - You'll use this path in PPO training config
+
+4. **Then proceed with PPO training** using the instructions below
 
 If you don't have these, see the "Quick Start (Without Prerequisites)" section below.
 
@@ -84,14 +115,26 @@ print(f"✅ Uploaded {len(uploaded)} files")
 
 ### 3. Upload Reward Model (Option B: From Google Drive)
 
-If your reward model is on Google Drive:
+If you trained the reward model on Colab using `02_reward_modeling_colab.ipynb`, it's already on your Google Drive:
 
 ```python
 from google.colab import drive
 drive.mount('/content/drive')
 
-# Copy from Drive to Colab
-!cp -r "/content/drive/MyDrive/reward_model_hh_rlhf" outputs/
+# Copy from Drive to Colab workspace
+# If you used the Colab notebook, the model is at:
+!mkdir -p outputs/reward_model_hh_rlhf
+!cp -r "/content/drive/MyDrive/llm_models/reward_model" outputs/reward_model_hh_rlhf/final_model
+
+# Verify
+!ls outputs/reward_model_hh_rlhf/final_model/
+```
+
+Or if you saved it to a different location on Drive:
+
+```python
+# Custom Drive location
+!cp -r "/content/drive/MyDrive/your-custom-path/reward_model" outputs/reward_model_hh_rlhf/final_model
 ```
 
 ### 3. Upload Reward Model (Option C: Use HuggingFace Hub)
@@ -450,9 +493,17 @@ Or periodically sync during training:
 
 ---
 
-## Complete Colab Notebook Template
+## Complete Colab Workflow
 
-Here's a complete notebook you can copy-paste:
+Here's the complete workflow for training PPO on Colab:
+
+### Step 1: Train Reward Model First
+
+Open `notebooks/02_reward_modeling_colab.ipynb` in Colab and run all cells. This trains a reward model and saves it to Google Drive.
+
+### Step 2: PPO Training
+
+Create a new Colab notebook and copy-paste this:
 
 ```python
 # === CELL 1: Setup ===
@@ -463,9 +514,14 @@ Here's a complete notebook you can copy-paste:
 %cd llm-post-training
 !pip install -q -e ".[gpu,rlhf,experiment]"
 
-# === CELL 2: Mount Drive (optional) ===
+# === CELL 2: Load Reward Model from Drive ===
 from google.colab import drive
 drive.mount('/content/drive')
+
+# Copy reward model from Drive (trained in Step 1)
+!mkdir -p outputs/reward_model_hh_rlhf
+!cp -r "/content/drive/MyDrive/llm_models/reward_model" outputs/reward_model_hh_rlhf/final_model
+!ls outputs/reward_model_hh_rlhf/final_model/
 
 # === CELL 3: Prepare Data ===
 # Option A: Use synthetic (easiest)
