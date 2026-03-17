@@ -28,9 +28,9 @@ Create a new Colab notebook and enable GPU:
 !git clone https://github.com/ars137th/llm-post-training.git
 %cd llm-post-training
 
-# Install dependencies (use Colab-specific requirements with relaxed version constraints)
-!pip install -q -r requirements/colab.txt
-!pip install -q -r requirements/colab-rlhf.txt
+# Install with GPU and experiment tracking extras
+# This installs PyTorch 2.4+ and all RLHF dependencies
+!pip install -q -e ".[gpu,rlhf,experiment]"
 
 # Verify installation
 !python -c "from src.core.ppo import *; print('✅ PPO imports work')"
@@ -282,9 +282,8 @@ If you don't have a reward model or prompts, run a minimal test:
 !git clone https://github.com/ars137th/llm-post-training.git
 %cd llm-post-training
 
-# Install (use Colab-specific requirements)
-!pip install -q -r requirements/colab.txt
-!pip install -q -r requirements/colab-rlhf.txt
+# Install with GPU extras
+!pip install -q -e ".[gpu,rlhf,experiment]"
 
 # Run minimal test with synthetic data (no reward model needed)
 !python scripts/train/train_ppo.py \
@@ -439,8 +438,7 @@ Here's a complete notebook you can copy-paste:
 # Clone and install
 !git clone https://github.com/ars137th/llm-post-training.git
 %cd llm-post-training
-!pip install -q -r requirements/colab.txt
-!pip install -q -r requirements/colab-rlhf.txt
+!pip install -q -e ".[gpu,rlhf,experiment]"
 
 # === CELL 2: Mount Drive (optional) ===
 from google.colab import drive
