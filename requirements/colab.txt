@@ -1,0 +1,27 @@
+# Colab-specific requirements
+# Colab comes with newer PyTorch pre-installed, so we use more flexible version constraints
+
+# Core dependencies - relaxed versions for Colab compatibility
+torch>=2.0.0  # Colab has 2.2.0+, no upper bound
+transformers>=4.35.0  # Allow newer versions
+peft>=0.7.0
+accelerate>=0.25.0
+datasets>=2.16.0
+evaluate>=0.4.0
+
+# Utilities
+einops>=0.7.0
+rich>=13.7.0
+numpy>=1.24.0
+tqdm>=4.65.0
+pyyaml>=6.0
+packaging>=23.0
+hydra-core>=1.3.0
+omegaconf>=2.3.0
+
+# Quantization (optional for Colab, usually not needed)
+# bitsandbytes>=0.41.0
+
+# Jupyter notebook support (already in Colab)
+# ipywidgets>=8.1.0
+# notebook>=7.0.0
