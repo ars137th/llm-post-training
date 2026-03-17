@@ -27,6 +27,7 @@ TRANSFORMERS_VERSION = get_transformers_version()
 TORCH_VERSION = get_torch_version()
 
 # API change thresholds
+TRANSFORMERS_4_31 = version.parse("4.31.0")  # no_cuda, use_mps_device removed
 TRANSFORMERS_4_36 = version.parse("4.36.0")
 
 
@@ -40,6 +41,8 @@ def get_training_args_kwargs(
     Get TrainingArguments kwargs compatible with installed transformers version.
 
     Handles API changes:
+    - transformers <4.31: no_cuda, use_mps_device
+    - transformers >=4.31: device selection handled automatically
     - transformers <4.36: evaluation_strategy, logging_dir
     - transformers >=4.36: eval_strategy, TENSORBOARD_LOGGING_DIR env var
 
@@ -56,6 +59,12 @@ def get_training_args_kwargs(
 
     # Always include output_dir (required by TrainingArguments)
     training_kwargs['output_dir'] = output_dir
+
+    # Remove deprecated device selection parameters (removed in 4.31+)
+    if TRANSFORMERS_VERSION >= TRANSFORMERS_4_31:
+        # Remove no_cuda and use_mps_device (no longer supported)
+        training_kwargs.pop('no_cuda', None)
+        training_kwargs.pop('use_mps_device', None)
 
     # Handle evaluation_strategy vs eval_strategy
     if TRANSFORMERS_VERSION >= TRANSFORMERS_4_36:
@@ -181,6 +190,14 @@ def print_version_info():
 
     # Print API compatibility info
     print("\nAPI Compatibility:")
+
+    # Device selection (4.31+ changes)
+    if TRANSFORMERS_VERSION >= TRANSFORMERS_4_31:
+        print("  - Device selection: Automatic (no_cuda, use_mps_device removed)")
+    else:
+        print("  - Device selection: Manual (no_cuda, use_mps_device supported)")
+
+    # Evaluation and logging (4.36+ changes)
     if TRANSFORMERS_VERSION >= TRANSFORMERS_4_36:
         print("  - Using transformers 4.36+ API")
         print("    * eval_strategy (not evaluation_strategy)")
