@@ -8,6 +8,7 @@ defaults:
   - override /model: gpt2
   - override /technique: reward_model
   - override /data: preference
+  - _self_
 
 # Model configuration
 model:
