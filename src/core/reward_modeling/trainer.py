@@ -312,6 +312,49 @@ class RewardModelTrainer(Trainer):
         # Don't remove any columns - we handle them in compute_loss()
         return dataset
 
+    def _save(self, output_dir: Optional[str] = None, state_dict=None):
+        """
+        Override save to handle tied weights in GPT-2 models.
+
+        GPT-2 has tied weights (wte.weight and lm_head.weight share memory).
+        Safetensors complains about this, so we need to handle it specially.
+
+        Args:
+            output_dir: Directory to save to
+            state_dict: Optional state dict to save
+        """
+        import os
+        output_dir = output_dir if output_dir is not None else self.args.output_dir
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Get the model to save
+        model_to_save = self.model
+
+        # Save using PyTorch format instead of safetensors to avoid tied weights issue
+        # This is a workaround for: https://github.com/huggingface/safetensors/issues/195
+        if state_dict is None:
+            state_dict = model_to_save.state_dict()
+
+        # Save with torch.save instead of safetensors
+        torch.save(state_dict, os.path.join(output_dir, "pytorch_model.bin"))
+
+        # Save config and tokenizer
+        if hasattr(model_to_save, 'config'):
+            model_to_save.config.save_pretrained(output_dir)
+
+        # Save tokenizer if available
+        tokenizer = getattr(model_to_save, 'tokenizer', None)
+        if tokenizer is None and hasattr(model_to_save, 'base_model'):
+            tokenizer = getattr(model_to_save.base_model, 'tokenizer', None)
+
+        if tokenizer is not None:
+            tokenizer.save_pretrained(output_dir)
+
+        # Save the value head separately (RewardModel specific)
+        if hasattr(model_to_save, 'value_head'):
+            value_head_path = os.path.join(output_dir, "value_head.pt")
+            torch.save(model_to_save.value_head.state_dict(), value_head_path)
+
 
 def compute_reward_metrics(eval_pred: EvalPrediction) -> Dict[str, float]:
     """
