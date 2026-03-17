@@ -8,6 +8,21 @@ Before starting, you need:
 1. **Trained Reward Model** - From Phase 3 (reward modeling)
 2. **Prompts Dataset** - Text file with prompts (one per line)
 
+### Where to Get a Reward Model
+
+**Option 1: Train locally using notebook**
+- Run `notebooks/02_reward_modeling.ipynb`
+- Output: `outputs/reward_tutorial/final_model/`
+- Takes ~10-15 minutes on CPU, ~2 minutes on GPU
+
+**Option 2: Use existing local model**
+- If you already trained one, it's in `outputs/reward_model/final_model/`
+- Check: `ls outputs/reward_model/final_model/` should show `model.safetensors`
+
+**Option 3: Skip for testing**
+- See "Quick Start (Without Prerequisites)" section below
+- Uses synthetic data and creates reward model on-the-fly (for testing only)
+
 If you don't have these, see the "Quick Start (Without Prerequisites)" section below.
 
 ---
@@ -38,7 +53,7 @@ Create a new Colab notebook and enable GPU:
 
 ### 3. Upload Reward Model (Option A: From Local)
 
-If you have a trained reward model locally:
+If you have a trained reward model locally (check `outputs/reward_model/final_model/` or `outputs/reward_tutorial/final_model/`):
 
 ```python
 # Create directory
@@ -48,8 +63,14 @@ If you have a trained reward model locally:
 from google.colab import files
 import os
 
-print("Upload your reward model files (model weights, config.json, etc.)")
-print("Upload to: outputs/reward_model_hh_rlhf/final_model/")
+print("Upload your reward model files from your local machine:")
+print("  - model.safetensors (main weights)")
+print("  - value_head.pt (reward head)")
+print("  - config.json, tokenizer files, etc.")
+print("")
+print("Local path on your machine:")
+print("  outputs/reward_model/final_model/  OR")
+print("  outputs/reward_tutorial/final_model/")
 
 uploaded = files.upload()
 
@@ -57,6 +78,8 @@ uploaded = files.upload()
 for filename, content in uploaded.items():
     with open(f'outputs/reward_model_hh_rlhf/final_model/{filename}', 'wb') as f:
         f.write(content)
+
+print(f"✅ Uploaded {len(uploaded)} files")
 ```
 
 ### 3. Upload Reward Model (Option B: From Google Drive)
