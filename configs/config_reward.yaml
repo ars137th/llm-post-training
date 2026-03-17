@@ -1,5 +1,15 @@
 # Reward Model Training Configuration
 # This file is used by scripts/train/train_reward_model.py
+#
+# PURPOSE: This is the BASE configuration that provides sensible defaults.
+# Experiment configs (e.g., reward_gpt2_hh_rlhf.yaml) OVERRIDE these defaults.
+#
+# USAGE:
+#   Direct:     python scripts/train/train_reward_model.py
+#   Experiment: python scripts/train/train_reward_model.py experiment=reward_gpt2_hh_rlhf
+#   Override:   python scripts/train/train_reward_model.py training.learning_rate=5e-5
+#
+# See: docs/REWARD_MODELING_CONFIGURATION.md for detailed guide
 
 defaults:
   - model: gpt2
@@ -29,23 +39,26 @@ training:
   bf16: false  # Set to true for A100/H100 GPUs
 
 # Data settings (specific to reward modeling)
+# NOTE: These are BASE DEFAULTS. Experiment configs override these values.
+#       e.g., reward_gpt2_hh_rlhf.yaml sets use_synthetic=false
 data:
-  # Use synthetic data for quick testing
+  # DEFAULT: Use synthetic data for quick testing/validation
   use_synthetic: true
   num_train_examples: 500  # Number of synthetic examples for training
   num_eval_examples: 100   # Number of synthetic examples for evaluation
 
-  # For real datasets (set use_synthetic: false and uncomment)
-  # dataset_name: "Anthropic/hh-rlhf"
-  # dataset_config: null
-  # train_split: "train"
-  # eval_split: "test"
-  # num_train_examples: null  # Use all available
-  # num_eval_examples: 1000
+  # For real datasets (enabled by experiment configs like reward_gpt2_hh_rlhf.yaml)
+  # These settings are commented out here but set by experiment configs:
+  # dataset_name: "Anthropic/hh-rlhf"  # HuggingFace dataset path
+  # dataset_config: null                # Dataset config name (if any)
+  # train_split: "train"                # Training split name
+  # eval_split: "test"                  # Evaluation split name
+  # num_train_examples: 10000           # Use subset for faster training
+  # num_eval_examples: 1000             # Evaluation subset size
 
-  # Data format
-  format: null  # Set to "anthropic" for Anthropic/hh-rlhf dataset
-  cache_dir: null
+  # Data format parsing
+  format: null  # Set to "anthropic" for Anthropic/hh-rlhf conversational format
+  cache_dir: null  # HuggingFace datasets cache directory
 
 # Evaluation settings
 evaluation:
