@@ -5,6 +5,7 @@ defaults:
   - model: gpt2
   - technique: dpo
   - data: preference
+  - optional experiment: null
   - _self_
 
 # Training settings (optimized for DPO)

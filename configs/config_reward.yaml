@@ -5,6 +5,7 @@ defaults:
   - model: gpt2
   - technique: reward_model
   - data: preference
+  - optional experiment: null
   - _self_
 
 # Training settings (optimized for reward modeling)

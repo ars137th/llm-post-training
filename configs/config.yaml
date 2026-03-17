@@ -5,6 +5,7 @@ defaults:
   - model: gpt2
   - technique: sft
   - data: conversation
+  - optional experiment: null
   - _self_
 
 # Training settings
