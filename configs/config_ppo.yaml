@@ -5,6 +5,7 @@ defaults:
   - model: gpt2
   - technique: ppo
   - data: prompts
+  - optional experiment: null
   - _self_
 
 # Training configuration
