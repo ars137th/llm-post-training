@@ -5,8 +5,8 @@ defaults:
   - model: gpt2
   - technique: dpo
   - data: preference
-  - optional experiment: null
-  - _self_
+  - _self_                     # Apply base config values first
+  - optional experiment: null  # Then experiment overrides them
 
 # Training settings (optimized for DPO)
 training:
