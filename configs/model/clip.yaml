@@ -1,0 +1,45 @@
+# CLIP Model Configuration
+# Contrastive Language-Image Pre-training
+
+name: "clip-vit-base-patch32"
+type: "vision_language"
+architecture: "clip"
+model_name_or_path: "openai/clip-vit-base-patch32"
+
+# Model variants:
+# - openai/clip-vit-base-patch32 (151M params, 224x224)
+# - openai/clip-vit-base-patch16 (149M params, 224x224, better quality)
+# - openai/clip-vit-large-patch14 (428M params, 224x224, best quality)
+
+# LoRA configuration
+use_lora: true
+lora_config:
+  r: 8
+  lora_alpha: 16
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "FEATURE_EXTRACTION"
+
+# Quantization
+use_4bit: false
+use_8bit: false
+
+# Image processing
+image_size: 224
+normalize: true
+
+# Text processing
+max_text_length: 77  # CLIP's context length
+
+# Training
+freeze_vision_encoder: false
+freeze_text_encoder: false
+
+# Notes:
+# - CLIP learns joint embeddings for images and text
+# - Useful for zero-shot classification, retrieval
+# - Can be fine-tuned on domain-specific data
+# - LoRA on attention layers reduces memory 90%

@@ -1,0 +1,87 @@
+# Image Captioning Data Configuration
+# For training vision-language models on image-caption pairs
+
+name: "image_caption"
+type: "multimodal"
+
+# Dataset selection
+dataset_name: "synthetic"  # Options: coco, flickr30k, conceptual, synthetic
+dataset_config: null
+data_files: null
+data_dir: null
+
+# Splits
+train_split: "train"
+eval_split: "validation"
+test_split: "test"
+
+# Sampling
+max_train_samples: 1000  # Limit for testing (null = use all)
+max_eval_samples: 200
+shuffle_train: true
+
+# Image processing
+image_column: "image"
+image_size: 224  # Will be resized to this
+normalize: true
+augmentation: false  # Random flip, crop, etc.
+
+# Text processing
+caption_column: "caption"
+text_column: "text"
+max_length: 512
+max_caption_length: 128
+min_caption_length: 5
+
+# Instruction formatting (for LLaVA-style training)
+use_instruction_format: false
+instruction_template: "Describe this image in detail:"
+response_template: "{caption}"
+
+# Preprocessing
+filter_empty: true
+filter_duplicates: false
+cache_dir: null
+use_cached: true
+
+# Data augmentation for captions
+caption_augmentation:
+  enabled: false
+  paraphrase: false
+  add_prefix: false
+  prefixes:
+    - "This image shows"
+    - "The picture depicts"
+    - "In this image,"
+
+# Preference pairs (for reward modeling/DPO)
+create_preference_pairs: false
+augment_negatives: true  # Generate negative examples by shuffling
+
+# Synthetic data settings (when dataset_name="synthetic")
+synthetic:
+  num_examples: 1000
+  colors: ["red", "blue", "green", "yellow", "purple", "orange"]
+  shapes: ["square", "circle", "triangle"]
+  patterns: ["solid", "striped", "dotted"]
+
+# Real dataset examples:
+# COCO Captions:
+#   dataset_name: "coco"
+#   max_train_samples: 50000
+#   max_eval_samples: 5000
+#
+# Flickr30k:
+#   dataset_name: "flickr30k"
+#   max_train_samples: 30000
+#   max_eval_samples: 1000
+#
+# Conceptual Captions (large scale):
+#   dataset_name: "conceptual"
+#   max_train_samples: 100000
+
+# Notes:
+# - Synthetic data good for quick testing
+# - COCO has 5 captions per image (high quality)
+# - Flickr30k has detailed captions
+# - Conceptual Captions is largest (3M+ pairs)

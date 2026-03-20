@@ -1,0 +1,56 @@
+# LLaVA Model Configuration
+# Large Language and Vision Assistant
+
+name: "llava-1.5-7b"
+type: "vision_language"
+architecture: "llava"
+model_name_or_path: "llava-hf/llava-1.5-7b-hf"
+
+# Model variants:
+# - llava-hf/llava-1.5-7b-hf (7B params, based on Vicuna-7B)
+# - llava-hf/llava-1.5-13b-hf (13B params, better quality)
+# - llava-hf/bakLlava-v1-hf (7B params, LLaMA-2 base)
+
+# LoRA configuration (recommended for 7B+ models)
+use_lora: true
+lora_config:
+  r: 16
+  lora_alpha: 32
+  target_modules:
+    - "q_proj"
+    - "v_proj"
+    - "k_proj"
+    - "o_proj"
+  lora_dropout: 0.05
+  bias: "none"
+  task_type: "CAUSAL_LM"
+
+# Quantization (highly recommended for 7B models)
+use_4bit: true  # Recommended: reduces 7B model to ~4GB
+use_8bit: false
+
+# Image processing
+image_size: 336  # LLaVA-1.5 uses 336x336
+patch_size: 14
+vision_encoder: "clip-vit-large-patch14-336"
+
+# Text processing
+max_length: 2048  # Maximum context length
+
+# Training
+freeze_vision_encoder: true  # Usually keep vision encoder frozen
+freeze_llm_backbone: false  # Fine-tune language model
+
+# Generation
+generation:
+  max_new_tokens: 512
+  temperature: 0.2
+  top_p: 0.9
+  do_sample: true
+
+# Notes:
+# - LLaVA = CLIP vision encoder + LLaMA/Vicuna LLM
+# - Best for multimodal instruction following
+# - Requires 4-bit quantization for consumer GPUs
+# - LoRA essential for 7B+ models
+# - Can understand and describe images in detail

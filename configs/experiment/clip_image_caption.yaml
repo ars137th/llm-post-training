@@ -1,0 +1,69 @@
+# @package _global_
+
+# Experiment: Train CLIP on Image Captioning
+# Quick test with synthetic data to verify multimodal pipeline
+
+defaults:
+  - override /model: clip
+  - override /technique: sft
+  - override /data: image_caption
+  - _self_
+
+# Model configuration
+model:
+  name: "clip-vit-base-patch32"
+  model_name_or_path: "openai/clip-vit-base-patch32"
+  use_lora: true
+  lora_config:
+    r: 8
+    lora_alpha: 16
+
+# Data configuration
+data:
+  dataset_name: "synthetic"
+  max_train_samples: 500
+  max_eval_samples: 100
+  image_size: 224
+  max_length: 77  # CLIP's context length
+
+# Training configuration
+training:
+  output_dir: "./outputs/clip_caption_synthetic"
+  num_epochs: 3
+  per_device_train_batch_size: 16  # CLIP is relatively small
+  per_device_eval_batch_size: 32
+  gradient_accumulation_steps: 1
+  learning_rate: 1e-5
+  weight_decay: 0.01
+  warmup_steps: 50
+  max_grad_norm: 1.0
+  logging_steps: 10
+  eval_steps: 100
+  save_steps: 200
+  fp16: true
+  bf16: false
+
+# Evaluation
+evaluation:
+  do_eval: true
+  metrics:
+    - "loss"
+    - "clip_score"  # Image-text alignment
+
+# Logging
+logging:
+  use_wandb: false
+  use_tensorboard: true
+  wandb_project: "llm-post-training"
+  wandb_run_name: "clip_caption_synthetic"
+
+# System
+device: "auto"
+seed: 42
+
+# Notes:
+# - Uses synthetic data for quick testing
+# - CLIP learns to align images with captions
+# - LoRA reduces memory by 90%
+# - Can evaluate with CLIP score metric
+# - For real data, switch to coco or flickr30k

@@ -1,0 +1,73 @@
+# @package _global_
+
+# Experiment: Train LLaVA on Multimodal Instructions
+# Instruction following with images (describe, answer questions, etc.)
+
+defaults:
+  - override /model: llava
+  - override /technique: sft
+  - override /data: image_caption
+  - _self_
+
+# Model configuration
+model:
+  name: "llava-1.5-7b"
+  model_name_or_path: "llava-hf/llava-1.5-7b-hf"
+  use_lora: true  # Essential for 7B model
+  lora_config:
+    r: 16
+    lora_alpha: 32
+  use_4bit: true  # Highly recommended for 7B
+  freeze_vision_encoder: true  # Keep CLIP encoder frozen
+
+# Data configuration
+data:
+  dataset_name: "synthetic"
+  max_train_samples: 500
+  max_eval_samples: 100
+  image_size: 336  # LLaVA-1.5 uses 336x336
+  max_length: 2048
+  use_instruction_format: true
+  instruction_template: "Describe this image in detail:"
+
+# Training configuration
+training:
+  output_dir: "./outputs/llava_instruction_synthetic"
+  num_epochs: 2
+  per_device_train_batch_size: 2  # 7B model needs small batch
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 8  # Effective batch = 16
+  learning_rate: 2e-5
+  weight_decay: 0.01
+  warmup_steps: 100
+  max_grad_norm: 1.0
+  logging_steps: 10
+  eval_steps: 100
+  save_steps: 200
+  fp16: true
+  bf16: false
+
+# Evaluation
+evaluation:
+  do_eval: true
+  metrics:
+    - "loss"
+    - "perplexity"
+
+# Logging
+logging:
+  use_wandb: false
+  use_tensorboard: true
+  wandb_project: "llm-post-training"
+  wandb_run_name: "llava_instruction_synthetic"
+
+# System
+device: "auto"
+seed: 42
+
+# Notes:
+# - LLaVA-1.5-7B requires ~8GB GPU with 4-bit quantization
+# - LoRA + 4-bit makes 7B trainable on consumer GPUs
+# - Instruction format: "Describe this image: {caption}"
+# - Can extend to VQA, reasoning, etc.
+# - For production, train on COCO/Flickr30k
