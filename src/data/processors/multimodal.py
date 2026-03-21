@@ -180,8 +180,11 @@ class MultimodalDataProcessor:
                 "orange": [255, 165, 0],
             }
 
-            img_array = np.ones((224, 224, 3), dtype=np.uint8) * color_map[color]
-            image = Image.fromarray(img_array)
+            # Create RGB array with explicit uint8 dtype
+            img_array = np.zeros((224, 224, 3), dtype=np.uint8)
+            rgb_values = np.array(color_map[color], dtype=np.uint8)
+            img_array[:, :] = rgb_values
+            image = Image.fromarray(img_array, mode='RGB')
 
             # Generate caption
             captions = [

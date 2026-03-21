@@ -7,6 +7,7 @@ A comprehensive guide to the Python techniques, patterns, and best practices use
 - [The @property Decorator](#the-property-decorator)
 - [Class Design and OOP](#class-design-and-oop)
 - [Dataclasses and Configuration](#dataclasses-and-configuration)
+- [Factory Functions and **kwargs](#factory-functions-and-kwargs)
 - [Context Managers](#context-managers)
 - [Decorators](#decorators)
 - [Modern Python Features](#modern-python-features)
@@ -389,6 +390,448 @@ print(config.learning_rate)  # 5e-7 (default)
 - ✅ Type hints built-in
 - ✅ Less boilerplate than manual classes
 - ✅ Immutable option with `@dataclass(frozen=True)`
+
+---
+
+## Factory Functions and **kwargs
+
+Factory functions are a common pattern for creating objects when you have multiple similar but slightly different variations. The `**kwargs` pattern allows flexible argument passing.
+
+### What is a Factory Function?
+
+**A factory function creates and returns objects**, often choosing which specific class or configuration to use based on parameters.
+
+**File**: `src/data/collators/multimodal.py:416-477`
+
+```python
+def create_multimodal_collator(
+    model_type: str,
+    tokenizer: PreTrainedTokenizer,
+    image_processor: Any,
+    **kwargs,
+):
+    """
+    Factory function to create appropriate collator for model type.
+
+    Returns:
+        CLIPDataCollator, LLaVADataCollator, or MultimodalDataCollator
+    """
+    if model_type.lower() == "clip":
+        # CLIP only accepts: max_length, padding
+        clip_kwargs = {
+            k: v for k, v in kwargs.items()
+            if k in ['max_length', 'padding']
+        }
+        return CLIPDataCollator(
+            tokenizer=tokenizer,
+            image_processor=image_processor,
+            **clip_kwargs,
+        )
+    elif model_type.lower() == "llava":
+        # LLaVA accepts: max_length, instruction_template, ignore_index
+        llava_kwargs = {
+            k: v for k, v in kwargs.items()
+            if k in ['max_length', 'instruction_template', 'ignore_index']
+        }
+        return LLaVADataCollator(
+            tokenizer=tokenizer,
+            image_processor=image_processor,
+            **llava_kwargs,
+        )
+    else:
+        return MultimodalDataCollator(
+            tokenizer=tokenizer,
+            image_processor=image_processor,
+            **kwargs,
+        )
+```
+
+**Usage:**
+```python
+# User doesn't need to know which collator class to use
+collator = create_multimodal_collator(
+    model_type="clip",  # Factory chooses CLIPDataCollator
+    tokenizer=processor.tokenizer,
+    image_processor=processor.image_processor,
+    max_length=77,
+)
+
+# Different model type → different collator
+llava_collator = create_multimodal_collator(
+    model_type="llava",  # Factory chooses LLaVADataCollator
+    tokenizer=llava_processor.tokenizer,
+    image_processor=llava_processor.image_processor,
+    instruction_template="Describe this image:",
+    max_length=512,
+)
+```
+
+### Why Use Factory Functions?
+
+**1. Hide Implementation Details**
+
+Users don't need to know:
+- Which specific class to instantiate
+- Import paths for each class
+- Differences between class constructors
+
+```python
+# Without factory: Users must know implementation details
+from src.data.collators.multimodal import CLIPDataCollator, LLaVADataCollator
+
+if model_type == "clip":
+    collator = CLIPDataCollator(tokenizer, image_processor, max_length=77)
+else:
+    collator = LLaVADataCollator(
+        tokenizer,
+        image_processor,
+        max_length=512,
+        instruction_template="Describe:"
+    )
+
+# With factory: Simple and clean
+collator = create_multimodal_collator(
+    model_type=model_type,
+    tokenizer=tokenizer,
+    image_processor=image_processor,
+    max_length=max_length,
+)
+```
+
+**2. Single Point of Change**
+
+When you add a new model type, users' code doesn't change:
+
+```python
+# Factory updated to support new "blip" model
+def create_multimodal_collator(model_type, ...):
+    if model_type == "clip":
+        return CLIPDataCollator(...)
+    elif model_type == "llava":
+        return LLaVADataCollator(...)
+    elif model_type == "blip":  # New!
+        return BLIPDataCollator(...)
+
+# User code unchanged:
+collator = create_multimodal_collator(model_type="blip", ...)
+```
+
+**3. Validation and Configuration**
+
+Factory can enforce rules and apply defaults:
+
+```python
+def create_vision_language_model(
+    model_type: str,
+    model_name: str,
+    use_lora: bool = False,
+    device: str = "auto",
+):
+    # Validation
+    if model_type not in ["clip", "llava"]:
+        raise ValueError(f"Unsupported model: {model_type}")
+
+    # Device logic
+    if device == "auto":
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    # Create appropriate wrapper
+    if model_type == "clip":
+        return CLIPWrapper(model_name, use_lora, device)
+    else:
+        return LLaVAWrapper(model_name, use_lora, device)
+```
+
+### Understanding **kwargs
+
+`**kwargs` collects **keyword arguments** into a dictionary.
+
+**Basic Example:**
+
+```python
+def print_info(name, age, **kwargs):
+    print(f"Name: {name}")
+    print(f"Age: {age}")
+    print(f"Other info: {kwargs}")
+
+# Call with extra arguments
+print_info(
+    name="Alice",
+    age=30,
+    city="NYC",       # Goes into kwargs
+    occupation="Engineer"  # Goes into kwargs
+)
+
+# Output:
+# Name: Alice
+# Age: 30
+# Other info: {'city': 'NYC', 'occupation': 'Engineer'}
+```
+
+**The `**` operator:**
+- **Packing** (in function definition): `**kwargs` collects extra keyword args into a dict
+- **Unpacking** (in function call): `**some_dict` expands dict into keyword arguments
+
+### **kwargs Packing
+
+**Collect extra arguments:**
+
+```python
+def train_model(model, data, **training_args):
+    """
+    training_args catches: learning_rate, num_epochs, batch_size, etc.
+    """
+    print(f"Model: {model}")
+    print(f"Training args: {training_args}")
+
+train_model(
+    model="gpt2",
+    data="wikitext",
+    learning_rate=1e-5,  # Goes into training_args
+    num_epochs=3,        # Goes into training_args
+    batch_size=16,       # Goes into training_args
+)
+
+# training_args = {
+#     'learning_rate': 1e-5,
+#     'num_epochs': 3,
+#     'batch_size': 16
+# }
+```
+
+### **kwargs Unpacking
+
+**Pass dict contents as keyword arguments:**
+
+```python
+def train(learning_rate, num_epochs, batch_size):
+    print(f"LR: {learning_rate}, Epochs: {num_epochs}, Batch: {batch_size}")
+
+# Have a config dict
+config = {
+    'learning_rate': 1e-5,
+    'num_epochs': 3,
+    'batch_size': 16,
+}
+
+# Unpack dict into keyword arguments
+train(**config)
+# Equivalent to: train(learning_rate=1e-5, num_epochs=3, batch_size=16)
+```
+
+### Real-World Example: Filtering kwargs
+
+**Problem**: Factory function receives kwargs that not all classes accept.
+
+**File**: `src/data/collators/multimodal.py:445-455`
+
+```python
+def create_multimodal_collator(
+    model_type: str,
+    tokenizer: PreTrainedTokenizer,
+    image_processor: Any,
+    **kwargs,  # Receives: max_length, padding, instruction_template, etc.
+):
+    if model_type == "clip":
+        # CLIPDataCollator only accepts: max_length, padding
+        # Filter out instruction_template, ignore_index, etc.
+        clip_kwargs = {
+            k: v for k, v in kwargs.items()
+            if k in ['max_length', 'padding']
+        }
+        return CLIPDataCollator(
+            tokenizer=tokenizer,
+            image_processor=image_processor,
+            **clip_kwargs,  # Unpack filtered kwargs
+        )
+    elif model_type == "llava":
+        # LLaVADataCollator accepts different parameters
+        llava_kwargs = {
+            k: v for k, v in kwargs.items()
+            if k in ['max_length', 'instruction_template', 'ignore_index']
+        }
+        return LLaVADataCollator(
+            tokenizer=tokenizer,
+            image_processor=image_processor,
+            **llava_kwargs,
+        )
+```
+
+**Why filter?**
+
+Without filtering:
+```python
+# User calls factory with all possible options
+collator = create_multimodal_collator(
+    model_type="clip",
+    tokenizer=tokenizer,
+    image_processor=image_processor,
+    max_length=77,
+    instruction_template="Describe:",  # Not valid for CLIP!
+)
+
+# Without filtering, this would error:
+# TypeError: CLIPDataCollator.__init__() got unexpected keyword argument 'instruction_template'
+
+# With filtering, instruction_template is silently ignored for CLIP
+```
+
+### Dictionary Comprehension (kwargs filtering)
+
+**Syntax**: `{key: value for key, value in dict.items() if condition}`
+
+```python
+# Original kwargs
+kwargs = {
+    'max_length': 77,
+    'padding': 'max_length',
+    'instruction_template': 'Describe:',  # Not wanted
+    'ignore_index': -100,  # Not wanted
+}
+
+# Filter to only include max_length and padding
+clip_kwargs = {
+    k: v for k, v in kwargs.items()
+    if k in ['max_length', 'padding']
+}
+
+# Result:
+# clip_kwargs = {'max_length': 77, 'padding': 'max_length'}
+```
+
+**Step by step:**
+1. `kwargs.items()` → [('max_length', 77), ('padding', 'max_length'), ...]
+2. For each `(k, v)` pair
+3. If `k in ['max_length', 'padding']` → include in new dict
+4. Otherwise → skip
+
+### Combining *args and **kwargs
+
+**Pattern**: Accept any positional and keyword arguments
+
+```python
+def flexible_function(*args, **kwargs):
+    """
+    *args: Tuple of positional arguments
+    **kwargs: Dict of keyword arguments
+    """
+    print(f"Positional: {args}")
+    print(f"Keyword: {kwargs}")
+
+flexible_function(1, 2, 3, name="Alice", age=30)
+# Positional: (1, 2, 3)
+# Keyword: {'name': 'Alice', 'age': 30}
+```
+
+**Real example** - Wrapper function:
+
+```python
+def logged_train(*args, **kwargs):
+    """Wrapper that adds logging to any train function."""
+    print("Starting training...")
+    result = train(*args, **kwargs)  # Pass everything through
+    print("Training complete!")
+    return result
+
+# Works with any train function signature:
+logged_train(model, data, learning_rate=1e-5)
+logged_train(model, data, epochs=3, batch_size=16)
+```
+
+### When to Use Factories and **kwargs
+
+**Use factory functions when:**
+- ✅ Multiple related classes with similar purpose but different implementations
+- ✅ Users shouldn't need to know which class to use
+- ✅ Configuration/selection logic is complex
+- ✅ You want a single import point
+
+**Examples in this repo:**
+- `create_multimodal_collator()` - Choose collator based on model type
+- `create_vision_language_model()` - Choose CLIP vs LLaVA wrapper
+- `create_optimizer()` - Choose Adam, AdamW, SGD, etc.
+
+**Use **kwargs when:**
+- ✅ Function has many optional parameters
+- ✅ Forwarding arguments to another function
+- ✅ Building flexible APIs
+- ✅ Config-based function calls
+
+**Examples in this repo:**
+- Factory functions passing options to constructors
+- Trainer wrappers forwarding to HuggingFace Trainer
+- Config-driven training scripts
+
+**Avoid when:**
+- ❌ Function has only a few well-defined parameters (explicit is better)
+- ❌ You want IDE autocomplete (kwargs lose type hints)
+- ❌ Debugging is important (kwargs hide argument flow)
+
+### Common Pitfall: Mutable Default Arguments
+
+**DON'T DO THIS:**
+
+```python
+def create_collator(tokenizer, options={}):  # ❌ BAD!
+    options['tokenizer'] = tokenizer
+    return options
+
+# Problem: Same dict reused across calls!
+c1 = create_collator(tok1)
+c2 = create_collator(tok2)
+# c1 and c2 share the SAME dict!
+```
+
+**DO THIS:**
+
+```python
+def create_collator(tokenizer, options=None):  # ✅ GOOD
+    if options is None:
+        options = {}
+    options['tokenizer'] = tokenizer
+    return options
+
+# Each call gets a fresh dict
+```
+
+### Summary: Factory Functions
+
+**Factory Pattern:**
+```python
+# Factory decides which class to instantiate
+def create_thing(type, **kwargs):
+    if type == "A":
+        return ThingA(**kwargs)
+    elif type == "B":
+        return ThingB(**kwargs)
+    else:
+        raise ValueError(f"Unknown type: {type}")
+
+# Users don't need to know about ThingA vs ThingB
+thing = create_thing("A", option1=True, option2=42)
+```
+
+**Benefits:**
+- 🎯 Single point of entry
+- 🔒 Encapsulation (hide implementation)
+- 🔧 Easy to extend (add new types)
+- 📝 Self-documenting (type string explains choice)
+
+**kwargs Patterns:**
+```python
+# 1. Collect extras
+def func(required, **extras):
+    pass
+
+# 2. Filter and forward
+def factory(**kwargs):
+    filtered = {k: v for k, v in kwargs.items() if k in allowed}
+    return SomeClass(**filtered)
+
+# 3. Pass through wrapper
+def wrapper(*args, **kwargs):
+    return underlying_func(*args, **kwargs)
+```
 
 ---
 

@@ -1,0 +1,44 @@
+{
+  "data": [
+    {
+      "image_path": "images/cat001.jpg",
+      "caption": "A fluffy orange tabby cat with bright green eyes sitting comfortably on a sunny windowsill"
+    },
+    {
+      "image_path": "images/dog002.jpg",
+      "caption": "A joyful golden retriever running through a lush green park with a tennis ball in its mouth"
+    },
+    {
+      "image_path": "images/sunset003.jpg",
+      "caption": "Breathtaking sunset over calm ocean waters with vibrant orange and pink clouds painting the horizon"
+    },
+    {
+      "image_path": "images/mountain004.jpg",
+      "caption": "Snow-capped mountain peaks rising majestically above a dense forest of evergreen trees"
+    },
+    {
+      "image_path": "images/coffee005.jpg",
+      "caption": "A steaming cup of cappuccino with intricate latte art on a rustic wooden table"
+    },
+    {
+      "image_path": "images/city006.jpg",
+      "caption": "Bustling city street at night with colorful neon signs reflecting on wet pavement"
+    },
+    {
+      "image_path": "images/flower007.jpg",
+      "caption": "Close-up of a vibrant red rose with morning dew drops glistening on its petals"
+    },
+    {
+      "image_path": "images/laptop008.jpg",
+      "caption": "Modern workspace with an open laptop, notebook, and coffee cup on a minimalist desk"
+    },
+    {
+      "image_path": "images/beach009.jpg",
+      "caption": "Pristine white sand beach with crystal clear turquoise water and palm trees swaying in the breeze"
+    },
+    {
+      "image_path": "images/food010.jpg",
+      "caption": "Colorful bowl of fresh fruit salad with strawberries, blueberries, kiwi, and mango pieces"
+    }
+  ]
+}

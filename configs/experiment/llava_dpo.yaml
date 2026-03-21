@@ -1,0 +1,85 @@
+# @package _global_
+
+# Experiment: Train LLaVA with DPO on Preference Pairs
+# Learns to generate preferred captions over less preferred ones
+
+defaults:
+  - override /model: llava
+  - override /technique: dpo
+  - override /data: image_caption
+  - _self_
+
+# Model configuration
+model:
+  name: "llava-1.5-7b"
+  model_name_or_path: "llava-hf/llava-1.5-7b-hf"
+  use_lora: true
+  lora_config:
+    r: 16
+    lora_alpha: 32
+    target_modules: ["q_proj", "v_proj", "k_proj", "o_proj"]
+    lora_dropout: 0.05
+  use_4bit: true  # Essential for 7B model
+  freeze_vision_encoder: true
+
+# Data configuration
+data:
+  dataset_name: "synthetic"
+  max_train_samples: 200  # Smaller for 7B model
+  max_eval_samples: 50
+  image_size: 336  # LLaVA-1.5 resolution
+  max_length: 512  # Shorter for DPO (full context not needed)
+  # Preference pairs: (image, better_caption, worse_caption)
+  create_preference_pairs: true
+  augment_negatives: true
+
+# DPO technique settings
+technique:
+  name: "dpo"
+  beta: 0.1  # Temperature for DPO loss
+  loss_type: "dpo"
+
+# Training configuration
+training:
+  output_dir: "./outputs/llava_dpo_synthetic"
+  num_epochs: 1  # DPO typically needs only 1 epoch
+  per_device_train_batch_size: 1  # Small for 7B with 4-bit
+  per_device_eval_batch_size: 2
+  gradient_accumulation_steps: 8  # Effective batch = 8
+  learning_rate: 5e-7  # Very low for DPO
+  weight_decay: 0.0
+  warmup_steps: 20
+  max_grad_norm: 1.0
+  logging_steps: 5
+  eval_steps: 50
+  save_steps: 100
+  fp16: true
+  bf16: false
+
+# Evaluation
+evaluation:
+  do_eval: true
+  metrics:
+    - "loss"
+    - "accuracy"  # Preference accuracy
+    - "reward_margin"  # Implicit reward difference
+
+# Logging
+logging:
+  use_wandb: false
+  use_tensorboard: true
+  wandb_project: "llm-post-training"
+  wandb_run_name: "llava_dpo_synthetic"
+
+# System
+device: "auto"
+seed: 42
+
+# Notes:
+# - Requires SFT model as starting point (use same checkpoint for policy/reference)
+# - DPO learns from preference pairs without explicit reward model
+# - Beta controls deviation from reference model
+# - Very low LR (5e-7) to avoid overfitting to preferences
+# - 4-bit + LoRA essential for training 7B model on consumer GPUs
+# - For real preferences, use human-rated caption pairs (e.g., COCO with quality ratings)
+# - LLaVA generates full captions, unlike CLIP which just aligns embeddings

@@ -163,6 +163,68 @@ def training_step_accepts_num_items(trainer_class) -> bool:
     return TRANSFORMERS_VERSION >= TRANSFORMERS_4_36
 
 
+def is_macos() -> bool:
+    """
+    Check if running on macOS.
+
+    Returns:
+        True if platform is Darwin (macOS)
+    """
+    import platform
+    return platform.system() == "Darwin"
+
+
+def is_linux() -> bool:
+    """
+    Check if running on Linux.
+
+    Returns:
+        True if platform is Linux
+    """
+    import platform
+    return platform.system() == "Linux"
+
+
+def is_windows() -> bool:
+    """
+    Check if running on Windows.
+
+    Returns:
+        True if platform is Windows
+    """
+    import platform
+    return platform.system() == "Windows"
+
+
+def apply_macos_training_workarounds(training_kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Apply macOS-specific workarounds for fork safety issues.
+
+    macOS has stricter fork safety rules than Linux. HuggingFace Trainer
+    uses multiprocessing internally, which can cause bus errors on macOS.
+
+    This function modifies training arguments to avoid these issues:
+    - Sets dataloader_num_workers=0 (no multiprocessing)
+    - Disables dataloader_pin_memory (not useful on CPU)
+
+    Args:
+        training_kwargs: Training arguments dict
+
+    Returns:
+        Modified training_kwargs with macOS workarounds applied
+
+    See: docs/known_issues.md - "Bus Error on macOS During Training"
+    """
+    if not is_macos():
+        return training_kwargs
+
+    # Force single-threaded data loading
+    training_kwargs['dataloader_num_workers'] = 0
+    training_kwargs['dataloader_pin_memory'] = False
+
+    return training_kwargs
+
+
 def get_version_info() -> Dict[str, str]:
     """
     Get version information for all relevant libraries.
@@ -170,11 +232,12 @@ def get_version_info() -> Dict[str, str]:
     Returns:
         Dict with library versions
     """
+    import platform
     return {
         'transformers': str(TRANSFORMERS_VERSION),
         'torch': str(TORCH_VERSION),
         'python': f"{__import__('sys').version_info.major}.{__import__('sys').version_info.minor}.{__import__('sys').version_info.micro}",
-        'platform': __import__('platform').system(),
+        'platform': platform.system(),
     }
 
 

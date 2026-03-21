@@ -1,0 +1,61 @@
+# Custom Image-Caption Dataset Configuration
+# Use this config to train with your own image-caption pairs
+#
+# Example usage:
+#   python scripts/train/train_multimodal.py \
+#       experiment=clip_image_caption \
+#       data=custom_image_caption \
+#       data.train_file=/path/to/your/train.json \
+#       data.image_dir=/path/to/your/images
+
+# Dataset name
+name: "custom_image_caption"
+
+# Data format: json, jsonl, or csv
+format: "json"
+
+# File paths (REQUIRED - override these!)
+train_file: null  # Path to training data file
+val_file: null    # Path to validation data file (optional)
+test_file: null   # Path to test data file (optional)
+
+# Image directory (if paths in data files are relative)
+image_dir: null   # Base directory for image paths
+
+# Data limits (null = use all data)
+max_train_samples: null
+max_val_samples: null
+max_test_samples: null
+
+# Image preprocessing
+image_size: 224
+image_processor: null  # Will use model's default processor
+
+# Caption settings
+max_caption_length: 77  # CLIP max token length
+truncate_long_captions: true
+
+# Data augmentation (optional)
+augmentation:
+  horizontal_flip: false
+  random_crop: false
+  color_jitter: false
+  normalize: true
+
+# Validation
+validate_on_load: true  # Check all images exist and can be loaded
+validate_captions: true  # Check captions are non-empty
+
+# DataLoader settings
+batch_size: 32
+shuffle: true
+drop_last: false
+pin_memory: true
+num_workers: 4
+
+# Caching
+cache_dir: null  # Optional: cache processed data
+
+# Advanced options
+streaming: false  # For JSONL: load data in streaming mode (memory efficient)
+buffer_size: 1000  # For streaming: number of examples to buffer

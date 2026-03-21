@@ -1,0 +1,76 @@
+# @package _global_
+
+# Experiment: Train CLIP on Image Captioning (macOS-Safe)
+# Configured to avoid fork safety issues on macOS
+
+defaults:
+  - override /model: clip
+  - override /technique: sft
+  - override /data: image_caption
+  - _self_
+
+# Model configuration
+model:
+  name: "clip-vit-base-patch32"
+  model_name_or_path: "openai/clip-vit-base-patch32"
+  use_lora: false  # PEFT has compatibility issues with CLIP's dual encoders
+  # CLIP-ViT-B/32 is small enough (~150M params) to train without LoRA
+  lora_config:
+    r: 8
+    lora_alpha: 16
+    # Note: LoRA can be enabled but may cause training errors
+    # See docs/known_issues.md for details
+
+# Data configuration
+data:
+  dataset_name: "synthetic"
+  max_train_samples: 500
+  max_eval_samples: 100
+  image_size: 224
+  max_length: 77  # CLIP's context length
+
+# Training configuration - macOS optimized
+training:
+  output_dir: "./outputs/clip_caption_synthetic_macos"
+  num_epochs: 3
+  per_device_train_batch_size: 8  # Smaller batch for CPU
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 2  # Effective batch = 8 * 2 = 16
+  learning_rate: 1e-5
+  weight_decay: 0.01
+  warmup_steps: 50
+  max_grad_norm: 1.0
+  logging_steps: 10
+  eval_steps: null  # Disable periodic eval to avoid fork issues
+  save_steps: 200
+  fp16: false  # CPU doesn't support fp16
+  bf16: false
+  dataloader_num_workers: 0  # CRITICAL: Avoid multiprocessing on macOS
+  dataloader_pin_memory: false  # Not useful on CPU
+
+# Evaluation - run only at end
+evaluation:
+  do_eval: true  # Eval after training completes
+  metrics:
+    - "loss"
+    - "clip_score"  # Image-text alignment
+
+# Logging
+logging:
+  use_wandb: false
+  use_tensorboard: true
+  wandb_project: "llm-post-training"
+  wandb_run_name: "clip_caption_synthetic_macos"
+
+# System
+device: "cpu"  # macOS doesn't have Metal GPU support yet
+seed: 42
+
+# Notes:
+# - macOS-safe configuration avoiding fork safety issues
+# - Uses dataloader_num_workers=0 to disable multiprocessing
+# - Disables periodic evaluation (eval_steps=null) to avoid Trainer's internal multiprocessing
+# - Evaluation runs once at the end of training
+# - Smaller batch size optimized for CPU training
+# - Training time: ~10-15 min for 500 samples on Apple Silicon CPU
+# - For faster training, use Google Colab with GPU (see docs/google_colab_guide.md)

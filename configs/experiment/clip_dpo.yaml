@@ -1,0 +1,80 @@
+# @package _global_
+
+# Experiment: Train CLIP with DPO on Preference Pairs
+# Learns to prefer better image-text alignments over worse ones
+
+defaults:
+  - override /model: clip
+  - override /technique: dpo
+  - override /data: image_caption
+  - _self_
+
+# Model configuration
+model:
+  name: "clip-vit-base-patch32"
+  model_name_or_path: "openai/clip-vit-base-patch32"
+  use_lora: true
+  lora_config:
+    r: 8
+    lora_alpha: 16
+    target_modules: ["q_proj", "v_proj"]
+
+# Data configuration
+data:
+  dataset_name: "synthetic"
+  max_train_samples: 500
+  max_eval_samples: 100
+  image_size: 224
+  max_length: 77  # CLIP's context length
+  # Preference pairs will be created from base data
+  create_preference_pairs: true
+  augment_negatives: true
+
+# DPO technique settings
+technique:
+  name: "dpo"
+  beta: 0.1  # Temperature for DPO loss
+  loss_type: "dpo"  # or "ipo"
+
+# Training configuration
+training:
+  output_dir: "./outputs/clip_dpo_synthetic"
+  num_epochs: 3
+  per_device_train_batch_size: 8  # Smaller for preference pairs
+  per_device_eval_batch_size: 16
+  gradient_accumulation_steps: 2  # Effective batch = 16
+  learning_rate: 5e-6  # Lower than SFT
+  weight_decay: 0.01
+  warmup_steps: 50
+  max_grad_norm: 1.0
+  logging_steps: 10
+  eval_steps: 100
+  save_steps: 200
+  fp16: true
+  bf16: false
+
+# Evaluation
+evaluation:
+  do_eval: true
+  metrics:
+    - "loss"
+    - "accuracy"  # Preference accuracy
+    - "reward_margin"  # Reward difference
+
+# Logging
+logging:
+  use_wandb: false
+  use_tensorboard: true
+  wandb_project: "llm-post-training"
+  wandb_run_name: "clip_dpo_synthetic"
+
+# System
+device: "auto"
+seed: 42
+
+# Notes:
+# - Requires SFT model as starting point (use same checkpoint for policy/reference)
+# - DPO learns from preference pairs without explicit reward model
+# - Beta controls how much to deviate from reference model
+# - Smaller LR than SFT to avoid overfitting to preferences
+# - For real preferences, use human-rated caption pairs

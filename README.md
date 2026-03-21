@@ -190,6 +190,13 @@ All techniques support both text-only and vision-language models:
 **Text Models**: GPT-2, OPT, LLaMA, Mistral
 **Vision-Language**: CLIP (contrastive), LLaVA (generative)
 
+**Want to add more models?** The framework is designed to be extensible. See `docs/ADDING_NEW_MULTIMODAL_MODELS.md` for a complete guide on integrating models like:
+- JinaClip
+- SigLIP
+- BLIP-2
+- InstructBLIP
+- And other CLIP-like or generative vision-language models
+
 ```python
 # Text-only example
 model = LanguageModel.from_pretrained("gpt2")
@@ -198,9 +205,70 @@ model = LanguageModel.from_pretrained("gpt2")
 model = VisionLanguageModel.from_pretrained("openai/clip-vit-base-patch32")
 ```
 
+## Custom Data Support
+
+Train on your own image-caption datasets! The repository supports loading custom data in multiple formats:
+
+**Supported Formats:**
+- JSON (recommended)
+- JSONL (for large datasets/streaming)
+- CSV (easy to create/edit)
+
+**Quick Example:**
+```bash
+# Train CLIP on your custom image-caption pairs
+python scripts/train/train_multimodal.py \
+    experiment=clip_image_caption \
+    data=custom_image_caption \
+    data.train_file=/path/to/your/train.json \
+    data.image_dir=/path/to/your/images \
+    data.format=json
+
+# Train DPO on your preference annotations
+python scripts/train/train_multimodal_dpo.py \
+    experiment=clip_dpo \
+    data=custom_preferences \
+    data.train_file=/path/to/your/preferences.json \
+    data.image_dir=/path/to/your/images
+```
+
+**See full guide:** `docs/CUSTOM_DATA_GUIDE.md`
+- Data format specifications
+- Validation tools
+- Example data preparation scripts
+- Best practices for caption quality
+
 ## Educational Resources
 
-### Jupyter Notebooks
+### Cloud Training Templates
+
+**Ready-to-use notebooks for cloud training:**
+
+- **Google Colab:** `notebooks/colab_training_template.ipynb`
+  - Complete setup for Colab Free, Pro, Pro+
+  - CLIP, LLaVA, GPT-2, DPO examples
+  - GPU optimization tips
+  - Storage and checkpointing
+  - See: `docs/google_colab_guide.md` and `docs/CLOUD_PLATFORMS_GUIDE.md`
+
+- **Databricks:** `notebooks/databricks_training_template.py`
+  - Cluster configuration guide
+  - MLflow integration
+  - Model registry
+  - Distributed training
+  - See: `docs/CLOUD_PLATFORMS_GUIDE.md`
+
+**Quick start (Colab):**
+```python
+# Open in Colab: notebooks/colab_training_template.ipynb
+# Run setup cells, then:
+!python scripts/train/train_multimodal.py \
+    experiment=clip_image_caption \
+    training.fp16=true
+```
+
+### Educational Notebooks
+
 1. `00_setup_and_quickstart.ipynb` - Get started quickly
 2. `01_understanding_sft.ipynb` - Deep dive into SFT
 3. `02_reward_modeling.ipynb` - Learn reward modeling

@@ -1,0 +1,61 @@
+# Custom Preference Dataset Configuration
+# Use this config to train DPO with your own preference pairs
+#
+# Example usage:
+#   python scripts/train/train_multimodal_dpo.py \
+#       experiment=clip_dpo \
+#       data=custom_preferences \
+#       data.train_file=/path/to/your/preferences.json \
+#       data.image_dir=/path/to/your/images
+
+# Dataset name
+name: "custom_preferences"
+
+# Data format: json, jsonl, csv, or ranked
+# - json/jsonl/csv: Direct preference pairs (chosen vs rejected)
+# - ranked: Multiple captions with rankings (auto-creates pairs)
+format: "json"
+
+# File paths (REQUIRED - override these!)
+train_file: null  # Path to preference data file
+val_file: null    # Path to validation preference file (optional)
+
+# Image directory (if paths in data files are relative)
+image_dir: null   # Base directory for image paths
+
+# Data limits (null = use all data)
+max_train_samples: null
+max_val_samples: null
+
+# Image preprocessing
+image_size: 224
+image_processor: null  # Will use model's default processor
+
+# Caption settings
+max_caption_length: 77  # CLIP max token length
+truncate_long_captions: true
+
+# Validation
+validate_on_load: true  # Check all images exist
+validate_preferences: true  # Check chosen != rejected
+filter_identical: true  # Remove pairs where chosen == rejected
+
+# DataLoader settings
+batch_size: 16  # Smaller batch for DPO (2 forwards per sample)
+shuffle: true
+drop_last: false
+pin_memory: true
+num_workers: 4
+
+# DPO-specific settings
+compute_ref_log_probs: true  # Compute reference model log probs
+ref_model: null  # Reference model path (defaults to initial model)
+
+# Advanced options
+streaming: false  # For JSONL: load data in streaming mode
+buffer_size: 1000  # For streaming: number of examples to buffer
+
+# Ranked data options (only for format="ranked")
+ranked_options:
+  min_rank_diff: 1  # Minimum rank difference for valid pairs
+  max_pairs_per_image: null  # Limit pairs per image (null = all combinations)

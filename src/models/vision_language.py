@@ -64,7 +64,7 @@ class CLIPWrapper(nn.Module):
             self._apply_lora(lora_config)
 
     def _apply_lora(self, lora_config: Dict):
-        """Apply LoRA to vision and text encoders."""
+        """Apply LoRA to text encoder only (vision encoder causes PEFT routing issues)."""
         # CLIP has separate vision and text encoders
         peft_config = LoraConfig(
             r=lora_config.get("r", 8),
@@ -78,11 +78,21 @@ class CLIPWrapper(nn.Module):
             task_type=TaskType.FEATURE_EXTRACTION,
         )
 
-        # Apply LoRA to both encoders
-        self.model.vision_model = get_peft_model(self.model.vision_model, peft_config)
+        # WORKAROUND: Apply LoRA to text encoder only
+        # Applying LoRA to vision encoder causes PEFT kwargs routing issues
+        # where input_ids gets passed to the vision model's forward()
+        # See: docs/known_issues.md for details
         self.model.text_model = get_peft_model(self.model.text_model, peft_config)
 
-        print(f"✓ LoRA applied to CLIP (r={peft_config.r})")
+        # Optional: Apply to vision encoder (currently disabled due to PEFT bug)
+        apply_to_vision = lora_config.get("apply_to_vision_encoder", False)
+        if apply_to_vision:
+            print("⚠️  Warning: Applying LoRA to vision encoder may cause training errors")
+            self.model.vision_model = get_peft_model(self.model.vision_model, peft_config)
+
+        print(f"✓ LoRA applied to CLIP text encoder only (r={peft_config.r})")
+        print(f"  Vision encoder: frozen (full precision)")
+        print(f"  Text encoder: LoRA adapters (trainable)")
 
     @classmethod
     def from_pretrained(

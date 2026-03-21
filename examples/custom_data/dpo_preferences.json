@@ -1,0 +1,29 @@
+{
+  "preferences": [
+    {
+      "image_path": "images/cat001.jpg",
+      "chosen": "A fluffy orange tabby cat with bright green eyes sitting comfortably on a sunny windowsill, enjoying the warm afternoon light",
+      "rejected": "A cat on a windowsill"
+    },
+    {
+      "image_path": "images/dog002.jpg",
+      "chosen": "A joyful golden retriever running through a lush green park with a tennis ball in its mouth, tail wagging enthusiastically",
+      "rejected": "Dog playing outside"
+    },
+    {
+      "image_path": "images/sunset003.jpg",
+      "chosen": "Breathtaking sunset over calm ocean waters with vibrant orange and pink clouds painting the horizon, creating a serene and peaceful atmosphere",
+      "rejected": "Sunset at the beach"
+    },
+    {
+      "image_path": "images/mountain004.jpg",
+      "chosen": "Snow-capped mountain peaks rising majestically above a dense forest of evergreen trees under a clear blue sky",
+      "rejected": "Mountains and trees"
+    },
+    {
+      "image_path": "images/coffee005.jpg",
+      "chosen": "A steaming cup of cappuccino with intricate latte art displaying a heart pattern on a rustic wooden table",
+      "rejected": "Coffee cup"
+    }
+  ]
+}

@@ -13,10 +13,13 @@ defaults:
 model:
   name: "clip-vit-base-patch32"
   model_name_or_path: "openai/clip-vit-base-patch32"
-  use_lora: true
+  use_lora: false  # PEFT has compatibility issues with CLIP's dual encoders
+  # CLIP-ViT-B/32 is small enough (~150M params) to train without LoRA
   lora_config:
     r: 8
     lora_alpha: 16
+    # Note: LoRA can be enabled but may cause training errors
+    # See docs/known_issues.md for details
 
 # Data configuration
 data:
@@ -63,7 +66,9 @@ seed: 42
 
 # Notes:
 # - Uses synthetic data for quick testing
-# - CLIP learns to align images with captions
-# - LoRA reduces memory by 90%
+# - CLIP learns to align images with captions via contrastive loss
+# - CLIP-ViT-B/32 (~150M params) can train without LoRA on modest hardware
+# - LoRA disabled by default due to PEFT compatibility issues (see docs/known_issues.md)
 # - Can evaluate with CLIP score metric
-# - For real data, switch to coco or flickr30k
+# - For real data, switch to dataset_name: "coco" or "flickr30k"
+# - Training time: ~5 min for 500 samples on CPU, ~1 min on GPU

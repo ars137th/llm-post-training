@@ -2,11 +2,11 @@
 
 ## Overview
 
-This repository implements multiple post-training techniques for LLMs in a phased approach. Each phase builds on previous work, progressing from basic supervised fine-tuning to advanced RLHF methods and multimodal support.
+This repository implements multiple post-training techniques for LLMs in a phased approach. Each phase builds on previous work, progressing from basic supervised fine-tuning to advanced RLHF methods, multimodal support, and mobile deployment.
 
-**Total Phases**: 7
-**Completed**: 2/7 (Phase 1 & 2)
-**Progress**: ~25%
+**Total Phases**: 9
+**Completed**: 6/9 (Phases 1-6)
+**Progress**: ~67%
 
 ---
 
@@ -14,297 +14,314 @@ This repository implements multiple post-training techniques for LLMs in a phase
 
 | Phase | Name | Status | Lines of Code | Documentation |
 |-------|------|--------|---------------|---------------|
-| 1 | Foundation | ✅ Complete | ~1,000 | README.md, INSTALLATION.md |
-| 2 | Supervised Fine-Tuning (SFT) | ✅ Complete | ~1,990 | PHASE2_SUMMARY.md |
-| 3 | Reward Modeling | ⏳ Not Started | TBD | - |
-| 4 | Direct Preference Optimization (DPO) | ⏳ Not Started | TBD | - |
-| 5 | PPO/RLHF | ⏳ Not Started | TBD | - |
-| 6 | Multimodal Support | ⏳ Not Started | TBD | - |
-| 7 | Polish & Documentation | ⏳ Not Started | TBD | - |
+| 1 | Foundation | ✅ Complete | ~1,000 | PHASE1_SUMMARY.md |
+| 2 | Supervised Fine-Tuning (SFT) | ✅ Complete | ~2,000 | PHASE2_SUMMARY.md |
+| 3 | Reward Modeling | ✅ Complete | ~1,500 | Multiple docs |
+| 4 | Direct Preference Optimization (DPO) | ✅ Complete | ~1,000 | DPO_THEORY.md |
+| 5 | PPO/RLHF | ✅ Complete | ~2,500 | PPO_THEORY.md |
+| 6 | Multimodal Support (SFT + DPO) | ✅ Complete | ~5,000 | PHASE6_SUMMARY.md |
+| 7 | Mobile/On-Device Training | ⏳ Not Started | TBD | MOBILE_ON_DEVICE_TRAINING.md (draft) |
+| 8 | Multimodal PPO | ⏳ Not Started | TBD | - |
+| 9 | Polish & Documentation | ⏳ In Progress | Ongoing | Various |
 
 ---
 
-## Phase 1 - Foundation ✅
+## Completed Phases
+
+### Phase 1 - Foundation ✅
 
 **Status**: COMPLETED
 **Goal**: Set up repository structure and basic infrastructure
 
-### Deliverables
-- ✅ Repository structure created
-- ✅ Requirements files (base.txt, gpu.txt, rlhf.txt, multimodal.txt, dev.txt)
-- ✅ `src/models/language.py` - Unified text model interface
-- ✅ `src/data/loaders.py` - Dataset loading utilities
-- ✅ Basic data processors
-- ✅ Initial Hydra configuration system
-- ✅ Documentation (README, INSTALLATION, QUICKSTART)
-- ✅ Version compatibility layer (`src/utils/compat.py`)
+**Key Deliverables:**
+- Repository structure with modular organization
+- Requirements files for different platforms (base, gpu, macos, rlhf, multimodal, dev)
+- `src/models/language.py` - Unified text model interface
+- `src/data/loaders.py` - Dataset loading utilities
+- Hydra configuration system
+- Version compatibility layer
 
-### Key Features
-- Model loading with LoRA/QLoRA support
-- Automatic device management (CPU/CUDA/MPS)
-- 4-bit/8-bit quantization support
-- Platform-specific installation (macOS vs GPU)
-- Configuration management with Hydra
-
-### Files Created
-```
-src/models/language.py          - Model wrapper with LoRA
-src/data/loaders.py             - Dataset loading
-src/data/processors/text.py     - Text processing
-src/utils/compat.py             - Version compatibility
-configs/                        - Hydra configuration system
-requirements/                   - Platform-specific dependencies
-```
-
-### Documentation
-- `README.md` - Project overview
-- `INSTALLATION.md` - Installation guide with troubleshooting
-- `QUICKSTART.md` - Quick start guide
-- `docs/VERSION_COMPATIBILITY.md` - Version compatibility layer
+**Documentation:**
+- `README.md`, `INSTALLATION.md`, `QUICKSTART.md`
+- `PHASE1_SUMMARY.md`
 
 ---
 
-## Phase 2 - Supervised Fine-Tuning (SFT) ✅
+### Phase 2 - Supervised Fine-Tuning (SFT) ✅
 
 **Status**: COMPLETED
-**Goal**: Implement full SFT training pipeline
-**Code**: ~1,990 lines
+**Goal**: Implement full SFT training pipeline for text models
+**Code**: ~2,000 lines
 
-### Deliverables
-- ✅ `src/core/sft/loss.py` (230 lines) - CausalLMLoss, FocalLoss
-- ✅ `src/core/sft/collator.py` (280 lines) - Data collation with prompt masking
-- ✅ `src/core/sft/trainer.py` (330 lines) - Custom SFT trainer
-- ✅ `scripts/train/train_sft.py` (270 lines) - Training script with Hydra
-- ✅ `src/evaluation/metrics/text.py` (360 lines) - BLEU, ROUGE, perplexity, diversity
-- ✅ `notebooks/01_understanding_sft.ipynb` - Tutorial notebook
-- ✅ `examples/test_sft.py` (120 lines) - Test script
-- ✅ `examples/minimal_sft.py` - Minimal working example
+**Key Deliverables:**
+- `src/core/sft/trainer.py` - Custom SFT trainer
+- `src/core/sft/loss.py` - Loss functions (CausalLM, Focal)
+- `src/core/sft/collator.py` - Data collation with prompt masking
+- `scripts/train/train_sft.py` - Training script
+- `src/evaluation/metrics/text.py` - Evaluation metrics
+- `notebooks/01_understanding_sft.ipynb` - Tutorial
 
-### Key Features
-- Custom loss functions (Causal LM, Focal)
+**Key Features:**
 - Prompt masking (only compute loss on responses)
-- Detailed logging (loss, accuracy, perplexity, gradient norms)
-- Sample generation during evaluation
-- LoRA/QLoRA integration
-- Multi-GPU support via Accelerate
-- WandB/TensorBoard integration
-- Comprehensive evaluation metrics
+- LoRA/QLoRA support
+- Multi-GPU training
+- Comprehensive logging and metrics
 
-### Usage
-```bash
-# Basic training
-python scripts/train/train_sft.py
-
-# Custom configuration
-python scripts/train/train_sft.py \
-    model=opt-350m \
-    training.learning_rate=1e-4 \
-    training.num_epochs=5
-
-# Minimal example
-python examples/minimal_sft.py
-
-# Test implementation
-python examples/test_sft.py
-```
-
-### Documentation
-- `PHASE2_SUMMARY.md` - Complete Phase 2 summary
-- `notebooks/01_understanding_sft.ipynb` - Interactive tutorial
-
-### What You Can Do
-- Train GPT-2, OPT, LLaMA models with SFT
-- Use custom datasets from HuggingFace or local files
-- Experiment with hyperparameters via Hydra
-- Evaluate models with multiple metrics
-- Generate sample outputs during training
+**Documentation:**
+- `PHASE2_SUMMARY.md`
 
 ---
 
-## Phase 3 - Reward Modeling ⏳
+### Phase 3 - Reward Modeling ✅
 
-**Status**: NOT STARTED
+**Status**: COMPLETED
 **Goal**: Train models to predict human preferences
-**Estimated Code**: 600-800 lines
+**Code**: ~1,500 lines
 
-### Planned Deliverables
-- `src/core/reward_modeling/trainer.py` (250-350 lines)
+**Key Deliverables:**
+- `src/core/reward_modeling/trainer.py` - Reward model trainer
 - `src/core/reward_modeling/loss.py` - Bradley-Terry ranking loss
-- `src/models/reward.py` - Reward model head (LM + linear → scalar)
+- `src/models/reward.py` - Reward model head
 - `src/data/processors/preference.py` - Preference pair processing
 - `scripts/train/train_reward_model.py` - Training script
-- `notebooks/02_reward_modeling.ipynb` - Tutorial
-- Ranking accuracy evaluation metrics
 
-### Key Concepts
-- **Bradley-Terry Model**: Learn to predict P(chosen > rejected)
-- **Architecture**: Base LM + linear head → scalar reward
-- **Training**: Pairwise preference data
-- **Evaluation**: Ranking accuracy on held-out pairs
+**Key Features:**
+- Bradley-Terry pairwise ranking
+- Ranking accuracy metrics
+- Compatible with PPO pipeline
 
-### Training Data Format
-```python
-{
-    "prompt": "Explain quantum computing",
-    "chosen": "Quantum computing uses quantum bits...",
-    "rejected": "Computers are fast."
-}
-```
-
-### Use Case
-Train a reward model that can score any response to a prompt, enabling RLHF in Phase 5.
+**Documentation:**
+- `docs/REWARD_MODELING_THEORY.md`
+- `docs/REWARD_MODELING_CONFIGURATION.md`
+- `docs/TROUBLESHOOTING_REWARD_MODELS.md`
 
 ---
 
-## Phase 4 - Direct Preference Optimization (DPO) ⏳
+### Phase 4 - Direct Preference Optimization (DPO) ✅
 
-**Status**: NOT STARTED
+**Status**: COMPLETED
 **Goal**: Optimize policy directly from preferences (simpler RLHF alternative)
-**Estimated Code**: 400-500 lines
+**Code**: ~1,000 lines
 
-### Planned Deliverables
-- `src/core/dpo/trainer.py` (200-300 lines)
+**Key Deliverables:**
+- `src/core/dpo/trainer.py` - DPO trainer
 - `src/core/dpo/loss.py` - DPO loss implementation
 - `scripts/train/train_dpo.py` - Training script
-- `notebooks/04_dpo_simplified_rlhf.ipynb` - Tutorial
-- Comparison experiments vs SFT baseline
+- IPO variant support
 
-### Key Concepts
-- **Single-Stage RLHF**: No separate reward model needed
-- **Log-Ratio Optimization**: Maximize log(π/π_ref) for chosen vs rejected
-- **Advantages**: Simpler, more stable than PPO
-- **Trade-offs**: Less flexible than PPO but easier to train
+**Key Features:**
+- Single-stage preference learning
+- No separate reward model needed
+- More stable than PPO
+- Support for both DPO and IPO loss variants
 
-### DPO Loss
-```
-L_DPO = -log σ(β log(π_θ(y_chosen|x)/π_ref(y_chosen|x))
-                - β log(π_θ(y_rejected|x)/π_ref(y_rejected|x)))
-```
-
-### Use Case
-Fine-tune models on preference data without the complexity of RL. Good for most use cases.
+**Documentation:**
+- `docs/DPO_THEORY.md`
+- `docs/DPO_CONFIGURATION.md`
 
 ---
 
-## Phase 5 - PPO/RLHF ⏳
+### Phase 5 - PPO/RLHF ✅
 
-**Status**: NOT STARTED
-**Goal**: Full reinforcement learning from human feedback (most complex)
-**Estimated Code**: 800-1,200 lines
+**Status**: COMPLETED
+**Goal**: Full reinforcement learning from human feedback
+**Code**: ~2,500 lines
 
-### Planned Deliverables
-- `src/core/ppo/trainer.py` (500-700 lines) - **Most complex module**
-- `src/core/ppo/rollout.py` - Generate responses, collect rewards
-- `src/core/ppo/advantage.py` - GAE (Generalized Advantage Estimation)
+**Key Deliverables:**
+- `src/core/ppo/trainer.py` - PPO trainer (most complex module)
+- `src/core/ppo/rollout.py` - Response generation and reward collection
 - `src/core/ppo/buffer.py` - Experience buffer
 - `scripts/train/train_ppo.py` - Training script
-- `notebooks/03_ppo_rlhf_deep_dive.ipynb` - Detailed tutorial
-- Extensive logging and visualization
 
-### Key Concepts
-**Four Models Required**:
-1. **Actor (Policy)**: Model being optimized
-2. **Critic (Value Function)**: Estimates expected rewards
-3. **Reference Model**: Frozen initial policy (KL constraint)
-4. **Reward Model**: Scores responses (from Phase 3)
+**Key Features:**
+- Four-model architecture (actor, critic, reference, reward)
+- Rollout and update phases
+- GAE (Generalized Advantage Estimation)
+- KL divergence penalty
+- Clipped PPO objective
+- Extensive logging
 
-**Training Loop**:
-1. **Rollout Phase**:
-   - Generate responses with current policy
-   - Score with reward model
-   - Compute KL penalty vs reference
-   - Calculate advantages (GAE)
-
-2. **Update Phase**:
-   - Optimize PPO clipped objective
-   - Update value function
-   - Log metrics (policy loss, value loss, KL, entropy)
-
-### PPO Objective
-```
-L_PPO = E[min(r(θ)A, clip(r(θ), 1-ε, 1+ε)A)] - β·KL(π_θ||π_ref)
-where r(θ) = π_θ(a|s) / π_old(a|s)
-```
-
-### Use Case
-Maximum flexibility and performance for RLHF. Use when you need fine-grained control over the optimization process.
+**Documentation:**
+- `docs/PPO_THEORY.md`
+- `docs/COLAB_PPO_TRAINING.md`
 
 ---
 
-## Phase 6 - Multimodal Support ⏳
+### Phase 6 - Multimodal Support (SFT + DPO) ✅
 
-**Status**: NOT STARTED
-**Goal**: Extend all techniques to vision-language models
-**Estimated Code**: 800-1,000 lines
+**Status**: COMPLETED
+**Goal**: Extend SFT and DPO to vision-language models
+**Code**: ~5,000 lines
 
-### Planned Deliverables
-- `src/models/vision_language.py` - CLIP, LLaVA wrappers
-- `src/data/processors/multimodal.py` - Image + text processing
-- `src/evaluation/metrics/multimodal.py` - CLIP score, image-text alignment
-- `notebooks/06_multimodal_training.ipynb` - Tutorial
-- Adapt SFT/DPO/PPO trainers for multimodal inputs
+**Key Deliverables:**
+- `src/models/vision_language.py` - CLIP and LLaVA wrappers
+- `src/data/processors/multimodal.py` - Multimodal data processing
+- `src/data/collators/multimodal.py` - Data collators (SFT + DPO)
+- `src/core/sft/multimodal_trainer.py` - Multimodal SFT trainer
+- `src/core/dpo/multimodal_trainer.py` - Multimodal DPO trainer
+- `src/core/reward_modeling/multimodal_trainer.py` - Multimodal reward modeling
+- `src/evaluation/metrics/multimodal.py` - CLIP Score, Retrieval metrics
+- `scripts/train/train_multimodal.py` - SFT training script
+- `scripts/train/train_multimodal_dpo.py` - DPO training script
+- `scripts/evaluate/evaluate_multimodal.py` - Evaluation script
+- `tests/test_multimodal_pipeline.py` - SFT tests
+- `tests/test_multimodal_dpo.py` - DPO tests
 
-### Supported Models
-- **CLIP**: Dual encoder (align image + text embeddings)
-- **LLaVA**: Vision encoder + LLM decoder
-- Others: BLIP, Flamingo variants
+**Supported Models:**
+- CLIP (dual encoder for image-text alignment)
+- LLaVA (vision encoder + LLM for instruction following)
 
-### Key Concepts
-- **Unified Interface**: Same API for text-only and multimodal
-- **Input Format**: `{pixel_values, input_ids, attention_mask}`
-- **Same Algorithms**: SFT, DPO, PPO work with both modalities
-- **Different Pipelines**: Image preprocessing + tokenization
+**Key Technical Achievement:**
+- Solved LoRA + CLIP training issue via separate encoder calls
+- Supports both CLIP and LLaVA architectures
+- DPO for multimodal models (two approaches: similarity-based and log-prob-based)
 
-### Training Data Format
-```python
-{
-    "image": PIL.Image,  # or None for text-only
-    "prompt": "Describe this image",
-    "response": "A beautiful sunset over mountains..."
-}
-```
+**Training Techniques:**
+- ✅ Supervised Fine-Tuning (SFT)
+- ✅ Direct Preference Optimization (DPO)
+- ⏸️ PPO/RLHF (deferred to Phase 8)
 
-### Use Case
-Train models that understand both vision and language (image captioning, VQA, multimodal chat).
+**Documentation:**
+- `PHASE6_SUMMARY.md`
+- `docs/multimodal_training_guide.md`
+- `docs/known_issues.md`
+- `notebooks/06_multimodal_training.ipynb`
 
 ---
 
-## Phase 7 - Polish & Documentation ⏳
+## Remaining Phases
+
+### Phase 7 - Mobile/On-Device Training ⏳
 
 **Status**: NOT STARTED
-**Goal**: Complete documentation, tutorials, and testing
+**Goal**: Enable LLM post-training on mobile devices (iOS/Android)
+**Estimated Code**: 1,000-1,500 lines
 
-### Planned Deliverables
-- Complete all tutorial notebooks
-- `notebooks/09_comparing_techniques.ipynb` - Side-by-side comparison
-- `src/utils/visualization.py` - Training curves, attention maps
-- Unit tests for all modules (`tests/`)
-- Example configs for all techniques
-- Comprehensive API documentation
+**Motivation:**
+- Run training directly on modern smartphones
+- Privacy-preserving on-device learning
+- Personalized model fine-tuning
+- Educational: unique feature for the repository
+
+**Planned Deliverables:**
+- `src/mobile/` - Mobile-specific implementations
+- `configs/mobile/` - Mobile-optimized configurations
+- `scripts/mobile/` - Mobile deployment scripts
+- `notebooks/10_mobile_on_device_training.ipynb` - Tutorial
+
+**Key Concepts:**
+- **Model Quantization**: 4-bit/8-bit for memory efficiency
+- **LoRA with Very Low Rank**: r=2-4 for mobile constraints
+- **Gradient Checkpointing**: Reduce memory footprint
+- **Small Batch Sizes**: Typically 1-2 examples
+- **SFT and DPO Only**: PPO too memory-intensive
+
+**Target Devices:**
+- iPhone 15 Pro (8GB RAM, A17 Pro)
+- High-end Android (12GB+ RAM)
+- Focus on models <1B parameters
+
+**Planned Approach:**
+1. **Memory Profiling**: Measure memory usage of tiny models (125M-350M)
+2. **Mobile Optimizations**: Aggressive quantization + ultra-low-rank LoRA
+3. **Training Scripts**: iOS/Android-compatible implementations
+4. **Benchmarks**: Performance metrics on real devices
+
+**Documentation:**
+- Draft exists: `docs/MOBILE_ON_DEVICE_TRAINING.md`
+- Needs implementation and real device testing
+
+**Use Cases:**
+- Personalized writing assistants
+- Domain-specific fine-tuning (medical, legal)
+- Privacy-sensitive applications
+- Educational demonstrations
+
+---
+
+### Phase 8 - Multimodal PPO ⏳
+
+**Status**: NOT STARTED (waiting for Phase 7)
+**Goal**: Extend PPO/RLHF to vision-language models
+**Estimated Code**: 1,500-2,000 lines
+
+**Motivation:**
+- Complete the multimodal training suite
+- Enable complex reward functions for vision-language tasks
+- Multi-objective optimization (quality + safety + style)
+
+**Planned Deliverables:**
+- `src/core/ppo/multimodal_trainer.py` - Multimodal PPO trainer
+- `src/core/ppo/multimodal_rollout.py` - Multimodal rollouts
+- `scripts/train/train_multimodal_ppo.py` - Training script
+- Updated configurations for CLIP and LLaVA PPO
+
+**Key Concepts:**
+- **Four Models** (multimodal versions):
+  1. Actor (policy): CLIP or LLaVA being optimized
+  2. Critic (value): Estimates expected rewards
+  3. Reference: Frozen policy for KL constraint
+  4. Reward model: Scores image-caption pairs
+
+- **Training Loop**:
+  1. Generate captions/alignments with policy
+  2. Score with multimodal reward model
+  3. Compute advantages
+  4. Update with PPO objective
+
+**Approaches:**
+- **CLIP PPO**: Optimize image-text alignment via reward model
+- **LLaVA PPO**: Generate better captions with reward-based learning
+
+**Challenges:**
+- High memory requirements (4 models in GPU)
+- Complex reward functions (image quality + text quality)
+- Stability issues (reward hacking, mode collapse)
+
+**When to Use:**
+- Complex multi-objective rewards
+- Need interpretable reward signals
+- DPO insufficient for task complexity
+
+**Documentation:**
+- Will extend `docs/multimodal_training_guide.md`
+- New section on PPO vs DPO trade-offs for multimodal
+
+---
+
+### Phase 9 - Polish & Documentation ⏳
+
+**Status**: IN PROGRESS (ongoing throughout project)
+**Goal**: Complete documentation, testing, and polish
+
+**Planned Deliverables:**
+- Complete all tutorial notebooks (currently 1/10)
+- `notebooks/09_comparing_techniques.ipynb` - Technique comparison
+- Comprehensive unit tests for all modules
+- API documentation
 - Performance benchmarks
 - Best practices guide
+- Pre-trained model zoo (optional)
 
-### Documentation Tasks
+**Documentation Tasks:**
+- [ ] Complete tutorial notebooks (9 remaining)
 - [ ] API reference for all modules
-- [ ] Tutorial videos (optional)
-- [ ] Troubleshooting guide expansion
+- [ ] Expanded troubleshooting guide
 - [ ] Performance optimization guide
 - [ ] Dataset preparation guide
-- [ ] Model zoo with pre-trained checkpoints
+- [ ] Video tutorials (optional)
 
-### Testing Tasks
-- [ ] Unit tests for core modules
-- [ ] Integration tests for training pipelines
+**Testing Tasks:**
+- [ ] Unit tests for core modules (started)
+- [ ] Integration tests for all training pipelines
 - [ ] End-to-end tests for all techniques
-- [ ] Regression tests for compatibility
+- [ ] Regression tests
 - [ ] Performance benchmarks
 
-### Visualization Features
-- Training curves (loss, reward, KL divergence)
-- Attention maps
-- Token probability distributions
-- Generation quality over time
+**Visualization Features:**
+- `src/utils/visualization.py` - Training curves, attention maps
 - Model comparison dashboards
+- Generation quality tracking
 
 ---
 
@@ -315,19 +332,134 @@ From simplest to most complex:
 1. **SFT** (Phase 2) ⭐ - Basic supervised learning
 2. **DPO** (Phase 4) ⭐⭐ - Single-stage preference optimization
 3. **Reward Modeling** (Phase 3) ⭐⭐ - Pairwise ranking
-4. **IPO** (optional) ⭐⭐ - DPO variant
-5. **Multimodal** (Phase 6) ⭐⭐⭐ - Cross-modal processing
+4. **Multimodal SFT** (Phase 6) ⭐⭐⭐ - Cross-modal processing
+5. **Multimodal DPO** (Phase 6) ⭐⭐⭐ - Multimodal preference learning
 6. **PPO/RLHF** (Phase 5) ⭐⭐⭐⭐⭐ - Full RL pipeline
+7. **Mobile Training** (Phase 7) ⭐⭐⭐⭐ - Resource-constrained optimization
+8. **Multimodal PPO** (Phase 8) ⭐⭐⭐⭐⭐⭐ - RL + vision-language
 
 ---
 
-## Performance vs Sample Efficiency
+## Technique Comparison
 
-| Technique | Sample Efficiency | Training Stability | Compute Cost | Best For |
-|-----------|-------------------|-------------------|--------------|----------|
-| **SFT** | ⭐⭐ | ⭐⭐⭐⭐⭐ | Low | Basic fine-tuning |
-| **DPO** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Medium | Preference learning |
-| **PPO** | ⭐⭐⭐⭐⭐ | ⭐⭐ | High | Maximum flexibility |
+### Text-Only Models
+
+| Technique | Sample Efficiency | Stability | Compute Cost | Memory | Best For |
+|-----------|-------------------|-----------|--------------|--------|----------|
+| **SFT** | ⭐⭐ | ⭐⭐⭐⭐⭐ | Low | Low | Basic fine-tuning |
+| **DPO** | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ | Medium | Medium | Preference learning |
+| **PPO** | ⭐⭐⭐⭐⭐ | ⭐⭐ | High | High | Maximum flexibility |
+
+### Multimodal Models
+
+| Technique | Implemented | Memory | Best For |
+|-----------|-------------|--------|----------|
+| **SFT** | ✅ Yes | Medium | Basic vision-language alignment |
+| **DPO** | ✅ Yes | Medium | Preference-based alignment |
+| **PPO** | ⏳ Phase 8 | Very High | Complex multi-objective rewards |
+
+---
+
+## Current Capabilities
+
+### What Works Now ✅
+
+**Text-Only:**
+- ✅ SFT with any HuggingFace LLM
+- ✅ Reward modeling with preference pairs
+- ✅ DPO and IPO for preference learning
+- ✅ Full PPO/RLHF pipeline
+- ✅ LoRA/QLoRA for memory efficiency
+- ✅ 4-bit/8-bit quantization
+- ✅ Multi-GPU training
+- ✅ Comprehensive metrics (BLEU, ROUGE, perplexity)
+
+**Multimodal:**
+- ✅ CLIP training (SFT, DPO)
+- ✅ LLaVA training (SFT, DPO)
+- ✅ CLIP Score and retrieval metrics
+- ✅ LoRA + CLIP (solved technical challenge)
+- ✅ 4-bit quantization for 7B models
+- ✅ Preference pair generation
+
+**Infrastructure:**
+- ✅ Hydra configuration system
+- ✅ WandB/TensorBoard logging
+- ✅ Platform compatibility (macOS, Linux, Colab)
+- ✅ Comprehensive documentation
+
+### Example Usage
+
+**Train GPT-2 with SFT:**
+```bash
+python scripts/train/train_sft.py
+```
+
+**Train with DPO:**
+```bash
+python scripts/train/train_dpo.py
+```
+
+**Train with PPO:**
+```bash
+python scripts/train/train_ppo.py
+```
+
+**Train CLIP with SFT:**
+```bash
+python scripts/train/train_multimodal.py experiment=clip_image_caption
+```
+
+**Train CLIP with DPO:**
+```bash
+python scripts/train/train_multimodal_dpo.py experiment=clip_dpo
+```
+
+---
+
+## Project Statistics
+
+**Total Lines of Code**: ~15,000+ lines
+- Phase 1: ~1,000 lines
+- Phase 2: ~2,000 lines
+- Phase 3: ~1,500 lines
+- Phase 4: ~1,000 lines
+- Phase 5: ~2,500 lines
+- Phase 6: ~5,000 lines
+- Tests: ~2,000 lines
+
+**Documentation**: 20+ markdown files, 1 tutorial notebook
+
+**Test Coverage**:
+- ✅ Text-only SFT
+- ✅ Text-only DPO
+- ✅ Text-only PPO
+- ✅ Multimodal SFT
+- ✅ Multimodal DPO
+
+---
+
+## Next Milestones
+
+### Phase 7: Mobile Training (Next)
+- Research mobile constraints
+- Implement ultra-low-rank LoRA
+- Test on real devices
+- Create mobile-specific configs
+- Write mobile training tutorial
+
+### Phase 8: Multimodal PPO
+- Extend PPO trainer for multimodal inputs
+- Implement multimodal reward models
+- Test CLIP and LLaVA PPO
+- Compare with DPO baseline
+
+### Phase 9: Final Polish
+- Complete all notebooks
+- Comprehensive testing
+- API documentation
+- Performance benchmarks
+- Community contributions guide
 
 ---
 
@@ -335,152 +467,57 @@ From simplest to most complex:
 
 After all phases are complete, the repository should enable users to:
 
-1. ✅ Train small language models using SFT on conversation data
-2. ⏳ Train reward models from preference pairs
-3. ⏳ Run full RLHF pipeline with PPO
-4. ⏳ Compare DPO vs PPO approaches
-5. ⏳ Extend to multimodal models (CLIP, LLaVA)
-6. ⏳ Evaluate models across text and image domains
-7. ✅ Understand internals of each technique through code and notebooks
-8. ✅ Experiment with hyperparameters via config system
-9. ✅ Run everything on consumer hardware (< 1B param models)
-
----
-
-## Current Capabilities (Phases 1-2)
-
-### What Works Now ✅
-- Load any HuggingFace model with LoRA/QLoRA
-- Train with SFT on custom datasets
-- Evaluate with multiple metrics (BLEU, ROUGE, perplexity)
-- Configure experiments via Hydra
-- Track training with WandB/TensorBoard
-- Multi-GPU training via Accelerate
-- Works on macOS, Linux, Colab, Databricks
-
-### Example: Train GPT-2 with SFT
-```bash
-# Install
-pip install -e ".[gpu]"  # or [macos] for macOS
-
-# Train
-python scripts/train/train_sft.py
-
-# Custom config
-python scripts/train/train_sft.py \
-    model=gpt2 \
-    data=wikitext \
-    training.learning_rate=5e-5 \
-    training.num_epochs=3
-```
-
-### Example: Minimal SFT in Python
-```python
-from src.models.language import LanguageModel
-from src.core.sft.trainer import SFTTrainer
-
-# Load model with LoRA
-model = LanguageModel.from_pretrained("gpt2", use_lora=True)
-
-# Setup and train
-trainer = SFTTrainer(
-    model=model.model,
-    args=training_args,
-    train_dataset=train_data,
-    tokenizer=model.tokenizer,
-)
-trainer.train()
-```
-
----
-
-## Next Steps
-
-### Immediate (Phase 3)
-- Implement reward modeling
-- Bradley-Terry loss
-- Preference data processing
-- Ranking accuracy metrics
-
-### Medium-term (Phases 4-5)
-- DPO implementation
-- PPO/RLHF with full RL loop
-- Compare all techniques
-
-### Long-term (Phases 6-7)
-- Multimodal support
-- Complete documentation
-- Tutorial notebooks for all techniques
-- Performance benchmarks
+1. ✅ Train small language models using SFT
+2. ✅ Train reward models from preference pairs
+3. ✅ Run full RLHF pipeline with PPO
+4. ✅ Compare DPO vs PPO approaches
+5. ✅ Extend to multimodal models (CLIP, LLaVA)
+6. ✅ Train multimodal models with SFT and DPO
+7. ⏳ Run on-device training on mobile devices
+8. ⏳ Train multimodal models with PPO
+9. ✅ Understand internals through code and docs
+10. ✅ Experiment via config system
 
 ---
 
 ## Project Resources
 
 ### Documentation
-- **Main Plan**: `~/.claude/plans/majestic-tumbling-deer.md` (Full implementation plan)
-- **Phase 2**: `PHASE2_SUMMARY.md` (SFT implementation details)
-- **Installation**: `INSTALLATION.md` (Setup guide)
-- **Quickstart**: `QUICKSTART.md` (Getting started)
-- **Compatibility**: `docs/VERSION_COMPATIBILITY.md` (Version compatibility)
+- `README.md` - Project overview
+- `INSTALLATION.md` - Setup guide
+- `PHASE1_SUMMARY.md` - Foundation details
+- `PHASE2_SUMMARY.md` - SFT implementation
+- `PHASE6_SUMMARY.md` - Multimodal implementation
+- `docs/DPO_THEORY.md` - DPO explanation
+- `docs/PPO_THEORY.md` - PPO explanation
+- `docs/multimodal_training_guide.md` - Multimodal guide
+- `docs/MOBILE_ON_DEVICE_TRAINING.md` - Mobile planning (draft)
 
 ### Code Structure
 ```
 llm-post-training/
 ├── src/
-│   ├── core/           # Training implementations
-│   │   └── sft/        # ✅ Phase 2 complete
-│   ├── models/         # ✅ Model wrappers
-│   ├── data/           # ✅ Data loading
-│   ├── evaluation/     # ✅ Metrics
-│   └── utils/          # ✅ Utilities
-├── scripts/train/      # ✅ Training scripts
-├── configs/            # ✅ Hydra configs
-├── notebooks/          # ✅ Tutorials (1/9 complete)
-├── examples/           # ✅ Minimal examples
-└── tests/              # ⏳ Unit tests (TODO)
+│   ├── core/                  # Training implementations
+│   │   ├── sft/              # ✅ Phase 2
+│   │   ├── reward_modeling/  # ✅ Phase 3
+│   │   ├── dpo/              # ✅ Phase 4
+│   │   └── ppo/              # ✅ Phase 5
+│   ├── models/               # ✅ Model wrappers
+│   │   ├── language.py       # ✅ Text models
+│   │   ├── vision_language.py # ✅ CLIP, LLaVA
+│   │   └── reward.py         # ✅ Reward models
+│   ├── data/                 # ✅ Data loading
+│   ├── evaluation/           # ✅ Metrics
+│   └── utils/                # ✅ Utilities
+├── scripts/train/            # ✅ Training scripts
+├── configs/                  # ✅ Hydra configs
+├── notebooks/                # ⏳ Tutorials (1/10 complete)
+├── examples/                 # ✅ Minimal examples
+└── tests/                    # ✅ Unit tests (started)
 ```
 
-### Community
-- **GitHub**: https://github.com/ars137th/llm-post-training
-- **Issues**: Report bugs or request features
-- **Contributions**: See `CONTRIBUTING.md`
-
 ---
 
-## Estimated Timeline
-
-Based on Phase 2 completion (took ~1 week with bug fixes):
-
-- **Phase 3** (Reward Modeling): 3-5 days
-- **Phase 4** (DPO): 2-3 days
-- **Phase 5** (PPO/RLHF): 1-2 weeks (most complex)
-- **Phase 6** (Multimodal): 1 week
-- **Phase 7** (Polish): Ongoing
-
-**Total Estimated Time**: 1-2 months for full completion
-
----
-
-## Contributing
-
-We welcome contributions at any phase! See `CONTRIBUTING.md` for guidelines.
-
-**Good First Issues**:
-- Add more evaluation metrics
-- Create tutorial notebooks
-- Add support for new models
-- Improve documentation
-- Write unit tests
-
-**Advanced Contributions**:
-- Implement Phase 3+ techniques
-- Add multimodal support
-- Performance optimizations
-- New training algorithms (IPO, KTO, etc.)
-
----
-
-**Last Updated**: 2026-03-05
-**Current Phase**: 2/7 complete
-**Next Milestone**: Phase 3 - Reward Modeling
+**Last Updated**: 2026-03-20
+**Current Phase**: 6/9 complete
+**Next Milestone**: Phase 7 - Mobile/On-Device Training
